@@ -96,7 +96,7 @@ Automatiza a criação do Web Service e do PostgreSQL via código.
 Detalhes do `render.yaml`:
 - Serviço web `dividafacil-web` (Docker) com health check em `/healthz`
 - Banco `dividafacil-db` (PostgreSQL)
-- `DATABASE_URL` do serviço web é mapeado do DB com `internalConnectionString`
+- `DATABASE_URL` do serviço web é mapeado do DB com `connectionString`
 
 ### 1) Subir para o GitHub
 
