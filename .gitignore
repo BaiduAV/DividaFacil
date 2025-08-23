@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environments
+.venv/
+.env
+.env.*
+
+# pytest
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Byte-compiled / compiled / build
+build/
+dist/
+*.egg-info/
+
+# Local databases
+*.db
+
+# Coverage
+htmlcov/
+.coverage*
+
+# Logs
+*.log
+
+# Node (if any future assets)
+node_modules/
+
+# Docker
+*.tar

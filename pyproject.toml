@@ -1,0 +1,20 @@
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "B", "I"]
+ignore = ["E203", "W503"]
+
+[tool.ruff.isort]
+known-first-party = ["src", "web_app"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]

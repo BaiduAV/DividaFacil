@@ -1,0 +1,34 @@
+# Render Infrastructure as Code
+# Docs: https://render.com/docs/infrastructure-as-code
+
+services:
+  - type: web
+    name: dividafacil-web
+    env: docker
+    autoDeploy: true
+    plan: free
+    region: oregon
+    healthCheckPath: /healthz
+    
+    # The Dockerfile at repo root is used automatically
+    # Exposed port is 8000 inside the container (see Dockerfile)
+
+    envVars:
+      - key: APP_NAME
+        value: DividaFacil
+      - key: LOG_LEVEL
+        value: INFO
+      # Use the internal connection string to connect within Render's network
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dividafacil-db
+          property: internalConnectionString
+
+# Managed PostgreSQL database
+# On first deploy, Render will provision this database and inject credentials
+# into the service via env var mapping above.
+databases:
+  - name: dividafacil-db
+    plan: free
+    region: oregon
+    ipAllowList: []
