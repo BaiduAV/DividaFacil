@@ -98,6 +98,8 @@ async def dashboard(request: Request):
             "request": request,
             "users": list(USERS.values()),
             "groups": list(GROUPS.values()),
+            # Total number of expenses across all groups for quick stats
+            "total_expenses": sum(len(g.expenses) for g in GROUPS.values()),
         },
     )
 
