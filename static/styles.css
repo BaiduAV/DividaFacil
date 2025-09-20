@@ -3,6 +3,27 @@
   box-sizing: border-box;
 }
 
+/*
+ * RESPONSIVE DESIGN SYSTEM
+ * 
+ * Breakpoint Strategy:
+ * - Mobile first approach with progressive enhancement
+ * - 320px: Small mobile phones
+ * - 480px: Large mobile phones
+ * - 640px: Small tablets and large phones
+ * - 768px: Medium tablets
+ * - 1024px: Large tablets and small desktops
+ * - 1280px+: Large desktops
+ * 
+ * Key responsive features:
+ * - Fluid typography that scales appropriately
+ * - Touch-friendly buttons (min 44px touch targets)
+ * - Optimized spacing for different screen sizes
+ * - Grid layouts that adapt from single to multi-column
+ * - Navigation that adjusts for mobile devices
+ * - Form layouts optimized for touch input
+ */
+
 body {
   margin: 0;
   padding: 0;
@@ -31,6 +52,21 @@ nav {
   align-items: center;
   justify-content: space-between;
   height: 4rem;
+}
+
+/* Responsive navigation */
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 0.75rem;
+    height: 3.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-container {
+    padding: 0 0.5rem;
+    height: 3rem;
+  }
 }
 
 .logo {
@@ -91,6 +127,28 @@ nav {
   font-weight: 500;
 }
 
+/* Responsive logo */
+@media (max-width: 768px) {
+  .logo h1 {
+    font-size: 1.375rem;
+  }
+  .logo p {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    gap: 0.5rem;
+  }
+  .logo h1 {
+    font-size: 1.25rem;
+  }
+  .logo p {
+    font-size: 0.65rem;
+  }
+}
+
 .demo-badge {
   display: flex;
   align-items: center;
@@ -128,9 +186,35 @@ main {
   padding: 2rem 1rem;
 }
 
+/* Responsive main padding */
+@media (max-width: 768px) {
+  main {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 1rem 0.75rem;
+  }
+}
+
 .hero {
   text-align: center;
   margin-bottom: 4rem;
+}
+
+/* Responsive hero spacing */
+@media (max-width: 768px) {
+  .hero {
+    margin-bottom: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    margin-bottom: 2rem;
+  }
 }
 
 .hero-badge {
@@ -151,6 +235,32 @@ main {
   color: #1e293b;
   margin-bottom: 1.5rem;
   line-height: 1.1;
+}
+
+/* Responsive hero typography */
+@media (max-width: 1024px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero h1 {
+    font-size: 2.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
 }
 
 .hero .gradient-text {
@@ -180,12 +290,28 @@ main {
 .main-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4rem;
+  gap: 3rem;
 }
 
+/* Tablet and up - better spacing and layout */
+@media (min-width: 768px) {
+  .main-grid {
+    gap: 3.5rem;
+  }
+}
+
+/* Desktop - two column layout */
 @media (min-width: 1024px) {
   .main-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+  }
+}
+
+/* Large desktop - more spacing */
+@media (min-width: 1280px) {
+  .main-grid {
+    gap: 5rem;
   }
 }
 
@@ -273,9 +399,18 @@ main {
   margin-bottom: 1.5rem;
 }
 
+/* Responsive form grid */
 @media (min-width: 640px) {
   .form-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-grid {
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
   }
 }
 
@@ -301,6 +436,20 @@ main {
   font-weight: 500;
   background: rgba(255, 255, 255, 0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive input fields */
+@media (max-width: 768px) {
+  .input-field {
+    padding: 0.875rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .input-field {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+  }
 }
 
 .input-field:focus {
@@ -460,9 +609,31 @@ main {
   margin-top: 4rem;
 }
 
+/* Responsive stats grid */
+@media (min-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
 @media (min-width: 640px) {
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    margin-top: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    margin-top: 2rem;
+    gap: 1.25rem;
   }
 }
 
@@ -553,13 +724,58 @@ footer {
 }
 
 /* Responsive */
+
+/* Large mobile phones */
+@media (max-width: 480px) {
+  .form-card { 
+    padding: 1.25rem; 
+    border-radius: 1rem;
+  }
+  .btn-primary, .btn-secondary { 
+    padding: 0.75rem 1.25rem; 
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+  }
+  .section h2 { 
+    font-size: 1.375rem; 
+  }
+  .hero-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Small tablets and large phones */
 @media (max-width: 640px) {
   .demo-badge { display: none; }
-  .hero h1 { font-size: 2.25rem; }
   .hero p { font-size: 1rem; }
   .section h2 { font-size: 1.5rem; }
   .form-card { padding: 1.5rem; }
   .btn-primary, .btn-secondary { padding: 0.875rem 1.5rem; }
+}
+
+/* Medium tablets */
+@media (max-width: 768px) {
+  .hero p { 
+    font-size: 1.125rem; 
+    line-height: 1.6;
+  }
+  .section-header {
+    margin-bottom: 1.5rem;
+  }
+  .section {
+    gap: 1.5rem;
+  }
+}
+
+/* Large tablets */
+@media (max-width: 1024px) {
+  .hero p { 
+    font-size: 1.25rem; 
+  }
+  .main-grid {
+    gap: 3rem;
+  }
 }
 
 /* Utility Classes */
@@ -568,6 +784,46 @@ footer {
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .gap-2 { gap: 0.5rem; }
+
+/* Touch improvements for mobile devices */
+@media (max-width: 768px) {
+  /* Increase touch targets */
+  .btn-primary, .btn-secondary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better hover states for touch devices */
+  .btn-primary:hover, .btn-secondary:hover {
+    transform: none;
+  }
+  
+  .form-card:hover {
+    transform: none;
+  }
+  
+  /* Improved tap highlights */
+  .btn-primary, .btn-secondary, .input-field {
+    -webkit-tap-highlight-color: rgba(14, 165, 233, 0.2);
+  }
+}
+
+/* Disable hover effects on touch devices */
+@media (hover: none) {
+  .btn-primary:hover, .btn-secondary:hover {
+    transform: none;
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-card:hover {
+    transform: none;
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-card:hover {
+    transform: none;
+  }
+}
 .gap-3 { gap: 0.75rem; }
 .gap-4 { gap: 1rem; }
 .mb-4 { margin-bottom: 1rem; }
