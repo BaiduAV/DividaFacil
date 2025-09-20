@@ -22,7 +22,6 @@ async def register_form(request: Request):
 @router.post("/register")
 async def register_user(
     request: Request,
-    response: Response,
     name: Annotated[str, Form()],
     email: Annotated[str, Form()],
     password: Annotated[str, Form()]
@@ -50,8 +49,9 @@ async def register_user(
         )
     
     # Create session and redirect to dashboard
-    SessionManager.create_session(response, user.id)
-    return RedirectResponse(url="/", status_code=303)
+    redirect_response = RedirectResponse(url="/", status_code=303)
+    SessionManager.create_session(redirect_response, user.id)
+    return redirect_response
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -66,7 +66,6 @@ async def login_form(request: Request):
 @router.post("/login")
 async def login_user(
     request: Request,
-    response: Response,
     email: Annotated[str, Form()],
     password: Annotated[str, Form()]
 ):
@@ -79,12 +78,14 @@ async def login_user(
         )
     
     # Create session and redirect to dashboard
-    SessionManager.create_session(response, user.id)
-    return RedirectResponse(url="/", status_code=303)
+    redirect_response = RedirectResponse(url="/", status_code=303)
+    SessionManager.create_session(redirect_response, user.id)
+    return redirect_response
 
 
 @router.post("/logout")
-async def logout_user(request: Request, response: Response):
+async def logout_user(request: Request):
     """Logout a user."""
-    SessionManager.destroy_session(request, response)
-    return RedirectResponse(url="/", status_code=303)
+    redirect_response = RedirectResponse(url="/", status_code=303)
+    SessionManager.destroy_session(request, redirect_response)
+    return redirect_response

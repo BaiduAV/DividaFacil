@@ -1,5 +1,8 @@
 from fastapi import Request, Response
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SessionManager:
@@ -14,6 +17,9 @@ class SessionManager:
         import secrets
         session_id = secrets.token_urlsafe(32)
         SessionManager._sessions[session_id] = user_id
+        
+        logger.info(f"Created session {session_id} for user {user_id}")
+        logger.info(f"Total sessions: {len(SessionManager._sessions)}")
         
         # Set secure session cookie
         response.set_cookie(
@@ -30,9 +36,16 @@ class SessionManager:
     def get_user_id(request: Request) -> Optional[str]:
         """Get user ID from session."""
         session_id = request.cookies.get("session_id")
+        logger.info(f"Looking up session: {session_id}")
+        logger.info(f"Available sessions: {list(SessionManager._sessions.keys())}")
+        
         if not session_id:
+            logger.info("No session_id cookie found")
             return None
-        return SessionManager._sessions.get(session_id)
+        
+        user_id = SessionManager._sessions.get(session_id)
+        logger.info(f"Session {session_id} -> User {user_id}")
+        return user_id
     
     @staticmethod
     def destroy_session(request: Request, response: Response) -> bool:
@@ -41,6 +54,7 @@ class SessionManager:
         if session_id and session_id in SessionManager._sessions:
             del SessionManager._sessions[session_id]
             response.delete_cookie("session_id")
+            logger.info(f"Destroyed session {session_id}")
             return True
         return False
     
