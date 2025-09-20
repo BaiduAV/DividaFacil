@@ -89,9 +89,11 @@ def test_installments_balance_recompute(client: TestClient):
     # Re-open group and ensure balances reflect unpaid ratio (2/3 of equal share)
     resp = client.get(f"/groups/{gid}")
     assert resp.status_code == 200
+    # Get fresh user objects from state after payment to see updated balances
+    updated_users = list(web_app.USERS.values())
+    u0 = updated_users[0] if updated_users[0].id == users[0].id else updated_users[1]
+    u1 = updated_users[1] if updated_users[1].id == users[1].id else updated_users[0]
     # Compute remaining expected per user: total share (150) * (2/3) = 100
-    u0 = users[0]
-    u1 = users[1]
     assert round(u0.balance.get(u1.id, 0), 2) == 100.0
     assert round(u1.balance.get(u0.id, 0), 2) == -100.0
 
