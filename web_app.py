@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import FastAPI, Request, Form, HTTPException, Depends
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Dict, List, Optional, Union
@@ -16,9 +16,11 @@ from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
 from src.state import USERS, GROUPS
+from src.auth import get_current_user, get_current_user_id
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
+from src.routers.auth import router as auth_router
 from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_expenses import router as api_expenses_router
@@ -45,6 +47,7 @@ app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 app.include_router(users_router)
 app.include_router(groups_router)
 app.include_router(expenses_router)
+app.include_router(auth_router)
 
 # API routers with JSON responses
 app.include_router(api_users_router)
@@ -62,6 +65,13 @@ def get_group_or_404(group_id: str) -> Group:
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    # For API requests, return JSON error responses
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": "HTTP Error", "detail": exc.detail}
+        )
+    
     # Render 404 with template when appropriate
     if exc.status_code == 404:
         return templates.TemplateResponse(
@@ -88,18 +98,31 @@ async def healthz():
     return {"status": "ok"}
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    # Recompute balances for UX correctness
-    for g in GROUPS.values():
+async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
+    if not current_user:
+        # Show login page if not authenticated
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "users": list(USERS.values())},
+        )
+    
+    # Get groups where current user is a member
+    user_groups = [group for group in GROUPS.values() 
+                   if current_user.id in group.members]
+    
+    # Recompute balances for user's groups only
+    for g in user_groups:
         ExpenseService.recompute_group_balances(g)
+    
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
-            "users": list(USERS.values()),
-            "groups": list(GROUPS.values()),
-            # Total number of expenses across all groups for quick stats
-            "total_expenses": sum(len(g.expenses) for g in GROUPS.values()),
+            "current_user": current_user,
+            "users": [current_user],  # Only show current user
+            "groups": user_groups,  # Only show user's groups
+            # Total number of expenses across user's groups
+            "total_expenses": sum(len(g.expenses) for g in user_groups),
         },
     )
 

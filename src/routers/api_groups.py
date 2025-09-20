@@ -1,39 +1,49 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from src.services.database_service import DatabaseService
 from src.schemas.group import GroupCreate, GroupResponse
 from src.schemas.user import UserResponse
 from src.services.expense_service import ExpenseService
+from src.auth import require_current_user_id
 
 router = APIRouter(prefix="/api", tags=["groups"])
 
 
 @router.post("/groups", response_model=GroupResponse, status_code=201)
-async def create_group_api(group_data: GroupCreate):
-    """Create a new group via JSON API."""
-    created = DatabaseService.create_group(group_data.name, [])
+async def create_group_api(group_data: GroupCreate, current_user_id: str = Depends(require_current_user_id)):
+    """Create a new group via JSON API. Current user automatically becomes a member."""
+    # Create group and add current user as a member
+    created = DatabaseService.create_group(group_data.name, [current_user_id])
     return GroupResponse.from_group(created)
 
 
 @router.get("/groups", response_model=list[GroupResponse])
-async def list_groups_api():
-    """List all groups via JSON API."""
-    groups = DatabaseService.get_all_groups()
+async def list_groups_api(current_user_id: str = Depends(require_current_user_id)):
+    """List groups where the current user is a member."""
+    all_groups = DatabaseService.get_all_groups()
     
-    # Recompute balances for accuracy
-    for group in groups.values():
+    # Filter to only groups where current user is a member
+    user_groups = [group for group in all_groups.values() 
+                   if current_user_id in group.members]
+    
+    # Recompute balances for user's groups only
+    for group in user_groups:
         ExpenseService.recompute_group_balances(group)
         DatabaseService.update_user_balances(group.members)
     
-    return [GroupResponse.from_group(group) for group in groups.values()]
+    return [GroupResponse.from_group(group) for group in user_groups]
 
 
 @router.get("/groups/{group_id}", response_model=GroupResponse)
-async def get_group_api(group_id: str):
-    """Get a specific group via JSON API."""
+async def get_group_api(group_id: str, current_user_id: str = Depends(require_current_user_id)):
+    """Get a specific group via JSON API. User must be a member."""
     group = DatabaseService.get_group(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if user is a member of the group
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
     
     # Recompute balances for accuracy
     ExpenseService.recompute_group_balances(group)
@@ -43,10 +53,15 @@ async def get_group_api(group_id: str):
 
 
 @router.post("/groups/{group_id}/members/{user_id}", status_code=204)
-async def add_member_api(group_id: str, user_id: str):
-    """Add a member to a group via JSON API."""
-    if not DatabaseService.get_group(group_id):
+async def add_member_api(group_id: str, user_id: str, current_user_id: str = Depends(require_current_user_id)):
+    """Add a member to a group via JSON API. User must be a member of the group."""
+    group = DatabaseService.get_group(group_id)
+    if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if current user is a member of the group (only members can add others)
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
     
     if not DatabaseService.get_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
