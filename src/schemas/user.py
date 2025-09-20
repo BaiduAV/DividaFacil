@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from typing import Dict
 
+from src.models.user import User
+
 
 class UserCreate(BaseModel):
     name: str
@@ -15,3 +17,13 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_user(cls, user: User) -> "UserResponse":
+        """Create UserResponse from User model."""
+        return cls(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            balance=user.balance
+        )
