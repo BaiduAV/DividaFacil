@@ -15,3 +15,13 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_user(cls, user):
+        """Create UserResponse from User model."""
+        return cls(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            balance=user.balance
+        )

@@ -1,5 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
+
+{% if is_authenticated %}
+<!-- Authenticated User View -->
+<div class="authenticated-header">
+  <div class="user-info">
+    <div class="user-avatar">{{ current_user.name[0].upper() }}</div>
+    <div>
+      <h2>Olá, {{ current_user.name }}!</h2>
+      <p>{{ current_user.email }}</p>
+    </div>
+  </div>
+  <form method="post" action="/logout" style="display: inline;">
+    <button type="submit" class="btn-secondary">Sair</button>
+  </form>
+</div>
+
 <!-- Hero Section -->
 <div class="hero">
   <div class="hero-badge">
@@ -14,11 +30,138 @@
     <span class="gradient-text">despesas</span>
   </h1>
   <p>
-    Crie usuários, forme grupos e divida despesas de forma inteligente e transparente
+    Forme grupos e divida despesas de forma inteligente e transparente
   </p>
 </div>
 
+{% else %}
+<!-- Unauthenticated User View -->
+<div class="hero">
+  <div class="hero-badge">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+    </svg>
+    <span>Bem-vindo!</span>
+  </div>
+  
+  <h1>
+    Gerencie suas 
+    <span class="gradient-text">despesas</span>
+  </h1>
+  <p>
+    Faça login ou cadastre-se para começar a dividir despesas de forma inteligente
+  </p>
+  
+  <div class="auth-buttons">
+    <a href="/login" class="btn-primary">Entrar</a>
+    <a href="/register" class="btn-secondary">Criar conta</a>
+  </div>
+</div>
+
+<style>
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.auth-buttons .btn-primary, .auth-buttons .btn-secondary {
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-buttons .btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.auth-buttons .btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.auth-buttons .btn-secondary {
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.auth-buttons .btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+</style>
+{% endif %}
+
+{% if is_authenticated %}
 <!-- Main Grid -->
+<div class="main-grid">
+
+<style>
+.authenticated-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar {
+  width: 3rem;
+  height: 3rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 900;
+  font-size: 1.25rem;
+}
+
+.user-info h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.user-info p {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+</style>
 <div class="main-grid">
   <!-- Users Section -->
   <section class="section">
@@ -31,8 +174,8 @@
         </div>
       </div>
       <div>
-        <h2>Usuários</h2>
-        <p>Adicione pessoas ao sistema</p>
+        <h2>Perfil</h2>
+        <p>Seus dados de usuário</p>
       </div>
     </div>
 
@@ -220,5 +363,6 @@
     <div class="stat-label">Despesas registradas</div>
   </div>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

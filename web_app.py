@@ -16,9 +16,12 @@ from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
 from src.state import USERS, GROUPS
+from src.services.session_manager import SessionManager
+from src.services.database_service import DatabaseService
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
+from src.routers.auth import router as auth_router
 from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_expenses import router as api_expenses_router
@@ -42,6 +45,7 @@ def create_app() -> FastAPI:
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
 # Routers (preserve existing URLs)
+app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(groups_router)
 app.include_router(expenses_router)
@@ -89,18 +93,43 @@ async def healthz():
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    # Recompute balances for UX correctness
-    for g in GROUPS.values():
-        ExpenseService.recompute_group_balances(g)
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "users": list(USERS.values()),
-            "groups": list(GROUPS.values()),
-            # Total number of expenses across all groups for quick stats
-            "total_expenses": sum(len(g.expenses) for g in GROUPS.values()),
-        },
-    )
+    # Check if user is authenticated
+    user_id = SessionManager.get_user_id(request)
+    current_user = None
+    if user_id:
+        current_user = DatabaseService.get_user(user_id)
+    
+    # If authenticated, show user's data only
+    if current_user:
+        # Get user's groups only
+        user_groups = [g for g in GROUPS.values() if current_user.id in g.members]
+        # Recompute balances for user's groups
+        for g in user_groups:
+            ExpenseService.recompute_group_balances(g)
+        
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {
+                "request": request,
+                "current_user": current_user,
+                "users": [current_user],  # Show only current user
+                "groups": user_groups,
+                "total_expenses": sum(len(g.expenses) for g in user_groups),
+                "is_authenticated": True,
+            },
+        )
+    else:
+        # Show public view - no data, just auth forms
+        return templates.TemplateResponse(
+            "dashboard.html",
+            {
+                "request": request,
+                "current_user": None,
+                "users": [],
+                "groups": [],
+                "total_expenses": 0,
+                "is_authenticated": False,
+            },
+        )
 
 
