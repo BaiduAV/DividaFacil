@@ -33,18 +33,29 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <!-- Left column: Members and Add Member -->
   <section class="lg:col-span-1 space-y-4">
-    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-      <h2 class="font-semibold mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
+    <div class="card">
+      <h2 style="font-weight: 900; color: #1e293b; font-size: 1.125rem; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: #0ea5e9;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
         Membros
       </h2>
-      <ul class="space-y-1">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         {% for m in group.members.values() %}
-          <li class="text-sm">• {{ m.name }} <span class="text-slate-400">({{ m.email }})</span></li>
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.6); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4);">
+          <div class="avatar" style="width: 2rem; height: 2rem; font-size: 0.875rem;">
+            {{ m.name[0].upper() }}
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: #374151; font-size: 0.875rem;">{{ m.name }}</div>
+            <div style="color: #64748b; font-size: 0.75rem;">{{ m.email }}</div>
+          </div>
+        </div>
         {% else %}
-          <li class="text-slate-400 text-sm">Sem membros</li>
+        <div style="text-align: center; padding: 1.5rem; color: #64748b;">
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">Nenhum membro ainda</div>
+          <div style="font-size: 0.875rem;">Adicione pessoas ao grupo</div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
     <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
       <h3 class="font-semibold mb-2 flex items-center gap-2">
