@@ -1,19 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
-<a href="/" class="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1" aria-label="Voltar para o painel">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-  Voltar
-</a>
-<h1 class="text-2xl font-semibold mt-2 mb-2">{{ group.name }}</h1>
+<!-- Hero Section -->
+<div class="hero" style="margin-bottom: 2rem;">
+  <div class="hero-badge">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+    </svg>
+    <a href="/" style="color: inherit; text-decoration: none;">Voltar ao Painel</a>
+  </div>
+  
+  <h1>
+    Grupo: <span class="gradient-text">{{ group.name }}</span>
+  </h1>
+  <p>
+    Gerencie membros, despesas e visualize saldos do grupo
+  </p>
+</div>
+
 {% if error %}
-  <div class="mb-4 bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 rounded flex items-start gap-2" role="alert" aria-live="polite">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5 mt-0.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+  <div style="margin-bottom: 2rem; background: rgba(254, 242, 242, 0.9); backdrop-filter: blur(16px); padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(254, 202, 202, 0.6); color: #dc2626; display: flex; align-items: flex-start; gap: 0.75rem;" role="alert" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-top: 0.125rem; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
     <span>{{ error }}</span>
   </div>
 {% endif %}
 {% if success %}
-  <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded flex items-start gap-2" role="status" aria-live="polite">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5 mt-0.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
+  <div style="margin-bottom: 2rem; background: rgba(240, 253, 244, 0.9); backdrop-filter: blur(16px); padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(167, 243, 208, 0.6); color: #059669; display: flex; align-items: flex-start; gap: 0.75rem;" role="status" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-top: 0.125rem; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
     <span>{{ success }}</span>
   </div>
 {% endif %}
@@ -21,18 +33,29 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <!-- Left column: Members and Add Member -->
   <section class="lg:col-span-1 space-y-4">
-    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-      <h2 class="font-semibold mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
+    <div class="card">
+      <h2 style="font-weight: 900; color: #1e293b; font-size: 1.125rem; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: #0ea5e9;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
         Membros
       </h2>
-      <ul class="space-y-1">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         {% for m in group.members.values() %}
-          <li class="text-sm">• {{ m.name }} <span class="text-slate-400">({{ m.email }})</span></li>
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.6); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4);">
+          <div class="avatar" style="width: 2rem; height: 2rem; font-size: 0.875rem;">
+            {{ m.name[0].upper() }}
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: #374151; font-size: 0.875rem;">{{ m.name }}</div>
+            <div style="color: #64748b; font-size: 0.75rem;">{{ m.email }}</div>
+          </div>
+        </div>
         {% else %}
-          <li class="text-slate-400 text-sm">Sem membros</li>
+        <div style="text-align: center; padding: 1.5rem; color: #64748b;">
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">Nenhum membro ainda</div>
+          <div style="font-size: 0.875rem;">Adicione pessoas ao grupo</div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
     <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
       <h3 class="font-semibold mb-2 flex items-center gap-2">

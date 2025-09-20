@@ -150,17 +150,15 @@
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       {% for group in groups %}
       <div class="card">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div class="card-content">
-            <div class="avatar" style="background: linear-gradient(135deg, #06b6d4, #0891b2, #0284c7);">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: white;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 15.75v-.3m12 3.27v-.188c0-1.121-.285-2.18-.786-3.104m0 0A5.987 5.987 0 0012 9.75a5.987 5.987 0 00-5.214 3.178m0 0a3 3 0 00-4.682 2.72 8.986 8.986 0 003.741.479"/>
-              </svg>
-            </div>
-            <div>
-              <h3>{{ group.name }}</h3>
-              <p>{{ group.members|length }} membros</p>
-            </div>
+        <div class="card-content">
+          <div class="avatar" style="background: linear-gradient(135deg, #06b6d4, #0891b2, #0284c7);">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.5rem; height: 1.5rem; color: white;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 15.75v-.3m12 3.27v-.188c0-1.121-.285-2.18-.786-3.104m0 0A5.987 5.987 0 0012 9.75a5.987 5.987 0 00-5.214 3.178m0 0a3 3 0 00-4.682 2.72 8.986 8.986 0 003.741.479"/>
+            </svg>
+          </div>
+          <div style="flex: 1;">
+            <h3>{{ group.name }}</h3>
+            <p>{{ group.members|length }} membros</p>
           </div>
           <a href="/groups/{{ group.id }}" 
              class="btn-primary" style="padding: 0.75rem 1.5rem; font-size: 0.875rem;"
