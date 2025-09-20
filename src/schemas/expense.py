@@ -49,6 +49,7 @@ class ExpenseResponse(BaseModel):
     description: str
     amount: float
     paid_by: str
+    created_by: Optional[str]
     split_among: List[str]
     split_type: SplitType
     split_values: Dict[str, float]
@@ -59,3 +60,29 @@ class ExpenseResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_expense(cls, expense):
+        """Create ExpenseResponse from Expense domain model."""
+        return cls(
+            id=expense.id,
+            description=expense.description,
+            amount=expense.amount,
+            paid_by=expense.paid_by,
+            created_by=expense.created_by,
+            split_among=expense.split_among,
+            split_type=expense.split_type,
+            split_values=expense.split_values,
+            created_at=expense.created_at,
+            installments_count=expense.installments_count,
+            first_due_date=expense.first_due_date,
+            installments=[
+                InstallmentResponse(
+                    number=inst.number,
+                    amount=inst.amount,
+                    due_date=inst.due_date,
+                    paid=inst.paid,
+                    paid_at=inst.paid_at
+                ) for inst in expense.installments
+            ]
+        )
