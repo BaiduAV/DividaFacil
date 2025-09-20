@@ -13,11 +13,17 @@ class UserRepository:
     def create(self, name: str, email: str) -> User:
         """Create a new user in the database."""
         user_id = str(uuid.uuid4())
+        default_prefs = {
+            'email_overdue': True,
+            'email_upcoming': True,
+            'days_ahead_reminder': 3
+        }
         db_user = UserDB(
             id=user_id,
             name=name,
             email=email,
-            balance={}
+            balance={},
+            notification_preferences=default_prefs
         )
         self.db.add(db_user)
         self.db.commit()
@@ -55,11 +61,26 @@ class UserRepository:
             return True
         return False
 
+    def update_notification_preferences(self, user_id: str, preferences: Dict[str, any]):
+        """Update user notification preferences."""
+        db_user = self.db.query(UserDB).filter(UserDB.id == user_id).first()
+        if db_user:
+            db_user.notification_preferences = preferences
+            self.db.commit()
+            return True
+        return False
+
     def _to_domain_model(self, db_user: UserDB) -> User:
         """Convert database model to domain model."""
+        default_prefs = {
+            'email_overdue': True,
+            'email_upcoming': True,
+            'days_ahead_reminder': 3
+        }
         return User(
             id=db_user.id,
             name=db_user.name,
             email=db_user.email,
-            balance=db_user.balance or {}
+            balance=db_user.balance or {},
+            notification_preferences=db_user.notification_preferences or default_prefs
         )

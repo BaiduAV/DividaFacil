@@ -62,6 +62,11 @@ class UserDB(Base):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     balance = Column(JSON, default=dict)  # Store as JSON: {"user_id": amount}
+    notification_preferences = Column(JSON, default=lambda: {
+        'email_overdue': True,
+        'email_upcoming': True,
+        'days_ahead_reminder': 3
+    })  # Store notification settings as JSON
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
