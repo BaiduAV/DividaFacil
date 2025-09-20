@@ -6,15 +6,15 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
     </svg>
-    <span>Painel Principal</span>
+    <span>{{ t('dashboard.main_panel') }}</span>
   </div>
   
   <h1>
-    Gerencie suas 
-    <span class="gradient-text">despesas</span>
+    {{ t('dashboard.manage_expenses') }} 
+    <span class="gradient-text">{{ t('dashboard.expenses') }}</span>
   </h1>
   <p>
-    Crie usuários, forme grupos e divida despesas de forma inteligente e transparente
+    {{ t('dashboard.create_users_description') }}
   </p>
 </div>
 
@@ -31,8 +31,8 @@
         </div>
       </div>
       <div>
-        <h2>Usuários</h2>
-        <p>Adicione pessoas ao sistema</p>
+        <h2>{{ t('dashboard.users') }}</h2>
+        <p>{{ t('dashboard.add_people_to_system') }}</p>
       </div>
     </div>
 
@@ -40,25 +40,25 @@
     <form action="/users" method="post" target="_self" class="form-card">
       <div class="form-grid">
         <div class="input-group">
-          <label class="input-label">Nome completo</label>
-          <input required name="name" placeholder="Ex: João Silva" 
+          <label class="input-label">{{ t('dashboard.full_name') }}</label>
+          <input required name="name" placeholder="{{ t('dashboard.full_name_placeholder') }}" 
                  class="input-field" 
-                 aria-label="Nome do usuário" title="Nome do usuário">
+                 aria-label="{{ t('dashboard.user_name_aria') }}" title="{{ t('dashboard.user_name_aria') }}">
         </div>
         <div class="input-group">
-          <label class="input-label">E-mail</label>
-          <input required type="email" name="email" placeholder="joao@exemplo.com" 
+          <label class="input-label">{{ t('dashboard.email') }}</label>
+          <input required type="email" name="email" placeholder="{{ t('dashboard.email_placeholder') }}" 
                  class="input-field" 
-                 aria-label="E-mail do usuário" title="E-mail do usuário">
+                 aria-label="{{ t('dashboard.user_email_aria') }}" title="{{ t('dashboard.user_email_aria') }}">
         </div>
       </div>
       <div style="display: flex; justify-content: flex-end; padding-top: 0.5rem;">
         <button class="btn-primary" 
-                aria-label="Adicionar usuário" title="Adicionar usuário">
+                aria-label="{{ t('dashboard.add_user') }}" title="{{ t('dashboard.add_user') }}">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
           </svg>
-          Adicionar usuário
+          {{ t('dashboard.add_user') }}
         </button>
       </div>
     </form>
@@ -84,8 +84,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
           </svg>
         </div>
-        <h3>Nenhum usuário ainda</h3>
-        <p>Adicione o primeiro usuário para começar</p>
+        <h3>{{ t('dashboard.no_users_yet') }}</h3>
+        <p>{{ t('dashboard.no_users_message') }}</p>
       </div>
       {% endfor %}
     </div>
@@ -102,23 +102,23 @@
         </div>
       </div>
       <div>
-        <h2>Grupos</h2>
-        <p>Organize pessoas em grupos</p>
+        <h2>{{ t('dashboard.groups') }}</h2>
+        <p>{{ t('dashboard.organize_people') }}</p>
       </div>
     </div>
 
     <!-- Add Group Form -->
     <form action="/groups" method="post" target="_self" class="form-card">
       <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label class="input-label">Nome do grupo</label>
-        <input required name="name" placeholder="Ex: Viagem para a praia" 
+        <label class="input-label">{{ t('forms.group_name') }}</label>
+        <input required name="name" placeholder="{{ t('forms.group_name_placeholder') }}" 
                class="input-field" 
-               aria-label="Nome do grupo" title="Nome do grupo">
+               aria-label="{{ t('forms.group_name_aria') }}" title="{{ t('forms.group_name_aria') }}">
       </div>
       
       {% if users %}
       <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label class="input-label">Membros do grupo</label>
+        <label class="input-label">{{ t('dashboard.group_members') }}</label>
         <div style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; max-height: 10rem; overflow-y: auto; padding: 1rem; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.8)); border-radius: 1rem; border: 2px solid rgba(148, 163, 184, 0.6);">
           {% for user in users %}
           <label style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.8); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onmouseover="this.style.background='rgba(255, 255, 255, 0.95)'; this.style.transform='scale(1.02)'; this.style.boxShadow='0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.8)'; this.style.transform='scale(1)'; this.style.boxShadow='none';">
@@ -137,7 +137,7 @@
       
       <div style="display: flex; justify-content: flex-end; padding-top: 0.5rem;">
         <button class="btn-secondary" 
-                aria-label="Criar grupo" title="Criar grupo">
+                aria-label="{{ t('dashboard.create_group') }}" title="{{ t('dashboard.create_group') }}">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
           </svg>

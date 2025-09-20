@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "DividaFácil",
+    "tagline": "Split expenses easily"
+  },
+  "navigation": {
+    "go_to_dashboard": "Go to dashboard",
+    "demo_active": "Demo Active",
+    "language": "Language"
+  },
+  "dashboard": {
+    "main_panel": "Main Panel",
+    "manage_expenses": "Manage your",
+    "expenses": "expenses",
+    "create_users_description": "Create users, form groups and split expenses intelligently and transparently",
+    "users": "Users",
+    "add_user": "Add user",
+    "add_people_to_system": "Add people to the system",
+    "full_name": "Full name",
+    "full_name_placeholder": "Ex: John Smith",
+    "email": "Email",
+    "email_placeholder": "john@example.com",
+    "user_name_aria": "User name",
+    "user_email_aria": "User email",
+    "groups": "Groups",
+    "add_group": "Add group",
+    "organize_people": "Organize people into groups",
+    "no_users_yet": "No users yet",
+    "no_users_message": "Start by adding users to create groups",
+    "no_groups_yet": "No groups yet",
+    "no_groups_message": "Create groups to organize expenses between users",
+    "group_members": "Group members",
+    "create_group": "Create group",
+    "open_group": "Open",
+    "users_registered": "Registered users",
+    "groups_created": "Created groups",
+    "expenses_registered": "Registered expenses"
+  },
+  "footer": {
+    "made_with": "Made with FastAPI + Tailwind CSS"
+  },
+  "forms": {
+    "group_name": "Group name",
+    "group_name_placeholder": "Ex: Shared House",
+    "select_members": "Select members",
+    "group_name_aria": "Group name",
+    "select_members_aria": "Select group members"
+  }
+}
