@@ -91,6 +91,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 async def healthz():
     return {"status": "ok"}
 
+
+@app.get("/session-info")
+async def session_info():
+    """Get session management information for monitoring."""
+    return SessionManager.get_session_info()
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     # Check if user is authenticated
