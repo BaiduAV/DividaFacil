@@ -13,8 +13,7 @@ from sqlalchemy import (
     Table,
     JSON,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
 # Database URL - default to SQLite local file, overridable via env
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dividafacil.db")
@@ -71,7 +70,7 @@ class UserDB(Base):
     
     # Relationships
     groups = relationship("GroupDB", secondary=group_members, back_populates="members")
-    paid_expenses = relationship("ExpenseDB", back_populates="payer")
+    paid_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.paid_by", back_populates="payer")
 
 
 class GroupDB(Base):
@@ -101,7 +100,7 @@ class ExpenseDB(Base):
     first_due_date = Column(DateTime)
     
     # Relationships
-    payer = relationship("UserDB", back_populates="paid_expenses")
+    payer = relationship("UserDB", foreign_keys=[paid_by], back_populates="paid_expenses")
     group = relationship("GroupDB", back_populates="expenses")
     split_among_users = relationship("UserDB", secondary=expense_split_among)
     installments = relationship("InstallmentDB", back_populates="expense", cascade="all, delete-orphan")
