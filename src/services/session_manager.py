@@ -44,7 +44,7 @@ class SessionManager:
             return None
         
         user_id = SessionManager._sessions.get(session_id)
-        logger.info(f"Session {session_id} -> User {user_id}")
+        # logger.info(f"Session {session_id} -> User {user_id}")  # Removed to avoid logging sensitive session info
         return user_id
     
     @staticmethod
