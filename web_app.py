@@ -31,7 +31,7 @@ app = FastAPI(title=settings.APP_NAME)
 configure_logging(settings.LOG_LEVEL)
 
 # Add session middleware for authentication
-app.add_middleware(SessionMiddleware, secret_key="your-secret-key-change-this-in-production")
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 
 def create_app() -> FastAPI:
     """Minimal application factory returning the configured FastAPI app.
