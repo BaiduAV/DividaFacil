@@ -4,7 +4,7 @@
 import requests
 import json
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 
 def test_authentication_and_filtering():
     """Test the authentication and expense filtering workflow."""
