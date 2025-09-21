@@ -37,7 +37,7 @@ class SessionManager:
         """Get user ID from session."""
         session_id = request.cookies.get("session_id")
         logger.info(f"Looking up session: {session_id}")
-        logger.info(f"Available sessions: {list(SessionManager._sessions.keys())}")
+        logger.debug(f"Available sessions: {list(SessionManager._sessions.keys())}")
         
         if not session_id:
             logger.info("No session_id cookie found")
