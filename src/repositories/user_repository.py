@@ -30,6 +30,27 @@ class UserRepository:
         self.db.refresh(db_user)
         return self._to_domain_model(db_user)
 
+    def create_with_password(self, name: str, email: str, password_hash: str) -> User:
+        """Create a new user with password hash in the database."""
+        user_id = str(uuid.uuid4())
+        default_prefs = {
+            'email_overdue': True,
+            'email_upcoming': True,
+            'days_ahead_reminder': 3
+        }
+        db_user = UserDB(
+            id=user_id,
+            name=name,
+            email=email,
+            password_hash=password_hash,
+            balance={},
+            notification_preferences=default_prefs
+        )
+        self.db.add(db_user)
+        self.db.commit()
+        self.db.refresh(db_user)
+        return self._to_domain_model(db_user)
+
     def get_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID."""
         db_user = self.db.query(UserDB).filter(UserDB.id == user_id).first()
@@ -82,5 +103,6 @@ class UserRepository:
             name=db_user.name,
             email=db_user.email,
             balance=db_user.balance or {},
-            notification_preferences=db_user.notification_preferences or default_prefs
+            notification_preferences=db_user.notification_preferences or default_prefs,
+            password_hash=db_user.password_hash
         )

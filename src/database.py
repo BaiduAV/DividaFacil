@@ -60,6 +60,7 @@ class UserDB(Base):
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password_hash = Column(String, nullable=True)  # For authentication, nullable for backward compatibility
     balance = Column(JSON, default=dict)  # Store as JSON: {"user_id": amount}
     notification_preferences = Column(JSON, default=lambda: {
         'email_overdue': True,

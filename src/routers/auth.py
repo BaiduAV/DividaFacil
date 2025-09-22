@@ -1,75 +1,37 @@
-"""
-Authentication routes for login/logout functionality.
-"""
+from fastapi import APIRouter, HTTPException, status, Depends
+from pydantic import BaseModel, validator
 from typing import Optional
-from fastapi import APIRouter, Form, HTTPException, Cookie
-from fastapi.responses import RedirectResponse, JSONResponse
+from src.services.user_service import UserService
+from src.utils.password_validation import validate_password
 
-from src.services.database_service import DatabaseService
-from src.auth import create_session, delete_session, set_session_cookie, clear_session_cookie
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-router = APIRouter()
+class AuthSchema(BaseModel):
+    username: str
+    password: str
 
+    @validator("password")
+    def password_validator(cls, v):
+        validate_password(v)
+        return v
 
 @router.post("/login")
-async def login(email: str = Form(...)):
-    """
-    Simple login by email (no password for simplicity).
-    In production, this should verify password.
-    """
-    user = DatabaseService.get_user_by_email(email)
+def login(auth: AuthSchema):
+    user = UserService.authenticate(auth.username, auth.password)
     if not user:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    # Create session
-    session_id = create_session(user.id)
-    
-    # Redirect to dashboard with session cookie
-    response = RedirectResponse("/", status_code=303)
-    set_session_cookie(response, session_id)
-    return response
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuário ou senha inválidos"
+        )
+    return {"message": "Login realizado com sucesso", "user_id": user.id}
 
-
-@router.post("/logout")
-async def logout(session_id: Optional[str] = Cookie(None, alias="session_id")):
-    """Logout and clear session."""
-    if session_id:
-        delete_session(session_id)
-    
-    response = RedirectResponse("/", status_code=303)
-    clear_session_cookie(response)
-    return response
-
-
-# API versions for programmatic access
-@router.post("/api/login")
-async def login_api(email: str = Form(...)):
-    """
-    API login by email.
-    Returns session info for setting cookie manually.
-    """
-    user = DatabaseService.get_user_by_email(email)
+@router.post("/register")
+def register(auth: AuthSchema):
+    # Password validation is already handled by AuthSchema
+    user = UserService.create_user(auth.username, auth.password)
     if not user:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    # Create session
-    session_id = create_session(user.id)
-    
-    response = JSONResponse({
-        "message": "Login successful",
-        "user_id": user.id,
-        "user_name": user.name
-    })
-    set_session_cookie(response, session_id)
-    return response
-
-
-@router.post("/api/logout")
-async def logout_api(session_id: Optional[str] = Cookie(None, alias="session_id")):
-    """API logout."""
-    if session_id:
-        delete_session(session_id)
-    
-    response = JSONResponse({"message": "Logout successful"})
-    clear_session_cookie(response)
-    return response
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Não foi possível criar o usuário"
+        )
+    return {"message": "Usuário criado com sucesso", "user_id": user.id}
