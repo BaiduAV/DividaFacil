@@ -15,6 +15,8 @@ class Settings:
 
     TEMPLATES_DIR: str = os.getenv("TEMPLATES_DIR", "templates")
     STATIC_DIR: str = os.getenv("STATIC_DIR", "static")
+    LOCALES_DIR: str = os.getenv("LOCALES_DIR", "locales")
+    DEFAULT_LOCALE: str = os.getenv("DEFAULT_LOCALE", "pt-BR")
 
 
 @lru_cache(maxsize=1)

@@ -3,6 +3,9 @@ from typing import Dict, List, Optional
 from datetime import datetime
 from enum import Enum
 
+from src.models.expense import Expense
+from src.models.installment import Installment
+
 
 class SplitType(str, Enum):
     EQUAL = "EQUAL"
@@ -42,6 +45,17 @@ class InstallmentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_installment(cls, installment: Installment) -> "InstallmentResponse":
+        """Create InstallmentResponse from Installment model."""
+        return cls(
+            number=installment.number,
+            amount=installment.amount,
+            due_date=installment.due_date,
+            paid=installment.paid,
+            paid_at=installment.paid_at
+        )
 
 
 class ExpenseResponse(BaseModel):
@@ -60,6 +74,26 @@ class ExpenseResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+    @classmethod
+    def from_expense(cls, expense: Expense) -> "ExpenseResponse":
+        """Create ExpenseResponse from Expense model."""
+        return cls(
+            id=expense.id,
+            description=expense.description,
+            amount=expense.amount,
+            paid_by=expense.paid_by,
+            split_among=expense.split_among,
+            split_type=SplitType(expense.split_type),
+            split_values=expense.split_values,
+            created_at=expense.created_at,
+            installments_count=expense.installments_count,
+            first_due_date=expense.first_due_date,
+            installments=[
+                InstallmentResponse.from_installment(inst) 
+                for inst in expense.installments
+            ]
+        )
 
     @classmethod
     def from_expense(cls, expense):

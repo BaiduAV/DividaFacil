@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Optional
 
 @dataclass
 class User:
@@ -13,6 +13,7 @@ class User:
         'email_upcoming': True,
         'days_ahead_reminder': 3
     })
+    password_hash: Optional[str] = None  # For authentication
 
     def update_balance(self, user_id: str, amount: float):
         """Update the balance with another user.

@@ -10,3 +10,4 @@ httpx==0.25.2
 sqlalchemy>=2.0.34
 alembic==1.13.1
 psycopg2-binary==2.9.9
+bcrypt==4.1.2
