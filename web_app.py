@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from typing import Dict, List, Optional, Union
 import uuid
 from datetime import datetime
@@ -12,6 +13,7 @@ from src.models.user import User
 from src.models.group import Group
 from src.models.expense import Expense
 from src.services.expense_service import ExpenseService
+from src.services.database_service import DatabaseService
 from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
@@ -32,6 +34,9 @@ from src.routers.api_expenses import router as api_expenses_router
 settings = get_settings()
 app = FastAPI(title=settings.APP_NAME)
 configure_logging(settings.LOG_LEVEL)
+
+# Add session middleware for authentication
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 
 def create_app() -> FastAPI:
     """Minimal application factory returning the configured FastAPI app.
@@ -101,51 +106,69 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 async def healthz():
     return {"status": "ok"}
 
+from src.auth import get_current_user_from_session, login_user, logout_user
 
-@app.get("/session-info")
-async def session_info():
-    """Get session management information for monitoring."""
-    return SessionManager.get_session_info()
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Show login page."""
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "users": list(USERS.values())}
+    )
+
+@app.post("/login")
+async def login(request: Request, user_id: str = Form(...)):
+    """Login user by setting session."""
+    user = DatabaseService.get_user(user_id)
+    if not user:
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "users": list(USERS.values()), "error": "User not found"}
+        )
+    
+    login_user(request, user)
+    return RedirectResponse("/", status_code=303)
+
+@app.post("/logout")
+async def logout(request: Request):
+    """Logout current user."""
+    logout_user(request)
+    return RedirectResponse("/login", status_code=303)
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     # Check if user is authenticated
-    user_id = SessionManager.get_user_id(request)
-    current_user = None
-    if user_id:
-        current_user = DatabaseService.get_user(user_id)
+    current_user = get_current_user_from_session(request)
+    if not current_user:
+        return RedirectResponse("/login", status_code=303)
     
-    # If authenticated, show user's data only
-    if current_user:
-        # Get user's groups only
-        user_groups = [g for g in GROUPS.values() if current_user.id in g.members]
-        # Recompute balances for user's groups
-        for g in user_groups:
-            ExpenseService.recompute_group_balances(g)
-        
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request,
-                "current_user": current_user,
-                "users": [current_user],  # Show only current user
-                "groups": user_groups,
-                "total_expenses": sum(len(g.expenses) for g in user_groups),
-                "is_authenticated": True,
-            },
-        )
-    else:
-        # Show public view - no data, just auth forms
-        return templates.TemplateResponse(
-            "dashboard.html",
-            {
-                "request": request,
-                "current_user": None,
-                "users": [],
-                "groups": [],
-                "total_expenses": 0,
-                "is_authenticated": False,
-            },
-        )
+    # Get user's groups and expenses
+    user_groups = []
+    user_expenses = []
+    
+    # Get all groups where the user is a member
+    for group in GROUPS.values():
+        if current_user.id in group.members:
+            ExpenseService.recompute_group_balances(group)
+            user_groups.append(group)
+            # Get expenses created by this user, or fallback to paid_by for legacy data
+            user_expenses.extend([
+                exp for exp in group.expenses 
+                if (exp.created_by == current_user.id) or 
+                   (exp.created_by is None and exp.paid_by == current_user.id)
+            ])
+    
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "users": list(USERS.values()),
+            "groups": user_groups,
+            "user_expenses": user_expenses,
+            # Total number of expenses created by this user
+            "total_expenses": len(user_expenses),
+        },
+    )
 
 

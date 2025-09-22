@@ -31,3 +31,20 @@ def reset_state():
 @pytest.fixture()
 def client():
     return TestClient(web_app.app)
+
+
+@pytest.fixture()
+def authenticated_client(client):
+    """Return a test client with a user automatically logged in."""
+    # Create a test user
+    resp = client.post("/users", data={"name": "Test User", "email": "test@example.com"})
+    
+    # Get the created user
+    users = list(web_app.USERS.values())
+    if users:
+        # Login the user
+        resp = client.post("/login", data={"user_id": users[0].id})
+        # Login redirects to dashboard, which should be accessible
+        assert resp.status_code in (303, 307, 200)
+    
+    return client

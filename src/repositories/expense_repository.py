@@ -17,6 +17,7 @@ class ExpenseRepository:
             description=expense.description,
             amount=expense.amount,
             paid_by=expense.paid_by,
+            created_by=expense.created_by,
             group_id=group_id,
             split_type=expense.split_type,
             split_values=expense.split_values,
@@ -130,6 +131,15 @@ class ExpenseRepository:
             return True
         return False
 
+    def get_by_created_by(self, created_by: str) -> List[Expense]:
+        """Get all expenses created by a specific user."""
+        db_expenses = self.db.query(ExpenseDB).options(
+            selectinload(ExpenseDB.split_among_users),
+            selectinload(ExpenseDB.installments)
+        ).filter(ExpenseDB.created_by == created_by).all()
+        
+        return [self._to_domain_model(db_expense) for db_expense in db_expenses]
+
     def _to_domain_model(self, db_expense: ExpenseDB) -> Expense:
         """Convert database model to domain model."""
         # Convert installments
@@ -152,6 +162,7 @@ class ExpenseRepository:
             description=db_expense.description,
             amount=db_expense.amount,
             paid_by=db_expense.paid_by,
+            created_by=db_expense.created_by,  # This can be None for legacy data
             split_among=split_among,
             split_type=db_expense.split_type,
             split_values=db_expense.split_values or {},

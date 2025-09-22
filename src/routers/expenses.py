@@ -10,6 +10,7 @@ from src.models.expense import Expense
 from src.services.expense_service import ExpenseService
 from src.services.database_service import DatabaseService
 from src.template_engine import templates
+from src.auth import require_authentication
 from .common import get_group_or_404
 
 router = APIRouter()
@@ -26,6 +27,9 @@ async def add_expense(
     first_due_date: Optional[str] = Form(None),
     request: Request = None,
 ):
+    # Require authentication
+    current_user = require_authentication(request)
+    
     group = get_group_or_404(group_id)
     if paid_by not in group.members:
         raise HTTPException(status_code=400, detail="Quem pagou deve ser um membro do grupo")
@@ -113,6 +117,7 @@ async def add_expense(
         amount=amount,
         description=description,
         paid_by=paid_by,
+        created_by=current_user.id,  # Set created_by to authenticated user
         split_among=split_among,
         split_type=split_type,
         split_values=split_values if split_type in ("EXACT", "PERCENTAGE") else {},
@@ -131,7 +136,10 @@ async def add_expense(
 
 
 @router.post("/groups/{group_id}/expenses/{expense_id}/installments/{number}/pay")
-async def pay_installment(group_id: str, expense_id: str, number: int):
+async def pay_installment(group_id: str, expense_id: str, number: int, request: Request):
+    # Require authentication
+    require_authentication(request)
+    
     if not DatabaseService.pay_installment(expense_id, number):
         raise HTTPException(status_code=404, detail="Parcela não encontrada ou já paga")
     
@@ -152,10 +160,19 @@ async def edit_expense(
     amount: float = Form(...),
     split_type: str = Form(...),
 ):
+    # Require authentication
+    current_user = require_authentication(request)
+    
     group = get_group_or_404(group_id)
     exp = next((e for e in group.expenses if e.id == expense_id), None)
     if not exp:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    # Only allow the creator to edit the expense (or paid_by for legacy data)
+    if not ((exp.created_by == current_user.id) or 
+            (exp.created_by is None and exp.paid_by == current_user.id)):
+        raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode editá-la")
+        
     if paid_by not in group.members:
         raise HTTPException(status_code=400, detail="Quem pagou deve ser um membro do grupo")
 
@@ -212,11 +229,20 @@ async def update_expense_date(
     group_id: str,
     expense_id: str,
     date: str = Form(...),
+    request: Request = None,
 ):
+    # Require authentication
+    current_user = require_authentication(request)
+    
     group = DatabaseService.get_group(group_id)
     exp = next((e for e in group.expenses if e.id == expense_id), None)
     if not exp:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    # Only allow the creator to edit the expense (or paid_by for legacy data)
+    if not ((exp.created_by == current_user.id) or 
+            (exp.created_by is None and exp.paid_by == current_user.id)):
+        raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode editá-la")
     try:
         new_dt = datetime.fromisoformat(date)
     except Exception:
@@ -236,7 +262,21 @@ async def update_expense_date(
 
 
 @router.post("/groups/{group_id}/expenses/{expense_id}/delete")
-async def delete_expense(group_id: str, expense_id: str):
+async def delete_expense(group_id: str, expense_id: str, request: Request):
+    # Require authentication
+    current_user = require_authentication(request)
+    
+    # Check if expense exists and user is the creator
+    group = DatabaseService.get_group(group_id)
+    exp = next((e for e in group.expenses if e.id == expense_id), None)
+    if not exp:
+        raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    # Only allow the creator to delete the expense (or paid_by for legacy data)
+    if not ((exp.created_by == current_user.id) or 
+            (exp.created_by is None and exp.paid_by == current_user.id)):
+        raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode excluí-la")
+    
     if not DatabaseService.delete_expense(expense_id):
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
     

@@ -24,9 +24,9 @@ def test_add_user_and_group_flow(client: TestClient):
     assert resp.status_code == 200
 
 
-def test_add_expense_with_comma_exact_and_percentage(client: TestClient):
-    # Setup: two users and a group
-    client.post("/users", data={"name": "Ana", "email": "ana@example.com"})
+def test_add_expense_with_comma_exact_and_percentage(authenticated_client: TestClient):
+    client = authenticated_client
+    # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
     users = list(web_app.USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
@@ -60,9 +60,9 @@ def test_add_expense_with_comma_exact_and_percentage(client: TestClient):
     assert b"percentuais devem somar 100" in r.content
 
 
-def test_installments_balance_recompute(client: TestClient):
-    # Setup
-    client.post("/users", data={"name": "Ana", "email": "ana@example.com"})
+def test_installments_balance_recompute(authenticated_client: TestClient):
+    client = authenticated_client
+    # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
     users = list(web_app.USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
@@ -98,9 +98,9 @@ def test_installments_balance_recompute(client: TestClient):
     assert round(u1.balance.get(u0.id, 0), 2) == -100.0
 
 
-def test_percentage_boundary_api_pass_and_fail(client: TestClient):
-    # Setup
-    client.post("/users", data={"name": "Ana", "email": "ana@example.com"})
+def test_percentage_boundary_api_pass_and_fail(authenticated_client: TestClient):
+    client = authenticated_client
+    # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
     users = list(web_app.USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
@@ -134,9 +134,9 @@ def test_percentage_boundary_api_pass_and_fail(client: TestClient):
     assert b"percentuais devem somar 100" in r.content
 
 
-def test_invalid_split_value_format_returns_400(client: TestClient):
-    # Setup
-    client.post("/users", data={"name": "Ana", "email": "ana@example.com"})
+def test_invalid_split_value_format_returns_400(authenticated_client: TestClient):
+    client = authenticated_client
+    # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
     users = list(web_app.USERS.values())
     client.post("/groups", data={"name": "G2", "member_ids": [u.id for u in users]})
@@ -157,11 +157,11 @@ def test_invalid_split_value_format_returns_400(client: TestClient):
     assert b"inv\xc3\xa1lido" in r.content
 
 
-def test_single_member_group_expense_flow(client: TestClient):
-    # Single member
-    client.post("/users", data={"name": "Solo", "email": "solo@example.com"})
+def test_single_member_group_expense_flow(authenticated_client: TestClient):
+    # Use the authenticated user as the single member
+    client = authenticated_client
     users = list(web_app.USERS.values())
-    solo = users[-1]
+    solo = users[0]  # Use the authenticated user
     client.post("/groups", data={"name": "SoloG", "member_ids": [solo.id]})
     gid = list(web_app.GROUPS.keys())[0]
 
