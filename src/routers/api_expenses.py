@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 import uuid
 
@@ -6,17 +6,22 @@ from src.services.database_service import DatabaseService
 from src.models.expense import Expense
 from src.schemas.expense import ExpenseCreate, ExpenseResponse, InstallmentResponse
 from src.services.expense_service import ExpenseService
+from src.auth import require_current_user_id
 
 router = APIRouter(prefix="/api", tags=["expenses"])
 
 
 @router.post("/groups/{group_id}/expenses", response_model=ExpenseResponse, status_code=201)
-async def create_expense_api(group_id: str, expense_data: ExpenseCreate):
-    """Create a new expense via JSON API."""
+async def create_expense_api(group_id: str, expense_data: ExpenseCreate, current_user_id: str = Depends(require_current_user_id)):
+    """Create a new expense via JSON API. User must be a member of the group."""
     # Validate group exists
     group = DatabaseService.get_group(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if current user is a member of the group
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
     
     # Validate paid_by user exists and is in group
     if expense_data.paid_by not in group.members:
@@ -74,11 +79,15 @@ async def create_expense_api(group_id: str, expense_data: ExpenseCreate):
 
 
 @router.get("/groups/{group_id}/expenses", response_model=list[ExpenseResponse])
-async def list_expenses_api(group_id: str):
-    """List all expenses for a group via JSON API."""
+async def list_expenses_api(group_id: str, current_user_id: str = Depends(require_current_user_id)):
+    """List all expenses for a group via JSON API. User must be a member of the group."""
     group = DatabaseService.get_group(group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if current user is a member of the group
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
     
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
@@ -87,8 +96,16 @@ async def list_expenses_api(group_id: str):
 
 
 @router.post("/groups/{group_id}/expenses/{expense_id}/installments/{number}/pay", status_code=204)
-async def pay_installment_api(group_id: str, expense_id: str, number: int):
-    """Mark an installment as paid via JSON API."""
+async def pay_installment_api(group_id: str, expense_id: str, number: int, current_user_id: str = Depends(require_current_user_id)):
+    """Mark an installment as paid via JSON API. User must be a member of the group."""
+    group = DatabaseService.get_group(group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if current user is a member of the group
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
+    
     if not DatabaseService.pay_installment(expense_id, number):
         raise HTTPException(status_code=404, detail="Installment not found or already paid")
     
@@ -100,8 +117,16 @@ async def pay_installment_api(group_id: str, expense_id: str, number: int):
 
 
 @router.delete("/groups/{group_id}/expenses/{expense_id}", status_code=204)
-async def delete_expense_api(group_id: str, expense_id: str):
-    """Delete an expense via JSON API."""
+async def delete_expense_api(group_id: str, expense_id: str, current_user_id: str = Depends(require_current_user_id)):
+    """Delete an expense via JSON API. User must be a member of the group."""
+    group = DatabaseService.get_group(group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Check if current user is a member of the group
+    if current_user_id not in group.members:
+        raise HTTPException(status_code=403, detail="Access denied. You are not a member of this group.")
+    
     if not DatabaseService.delete_expense(expense_id):
         raise HTTPException(status_code=404, detail="Expense not found")
     

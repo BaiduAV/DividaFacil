@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+  <h1>Entre em sua conta</h1>
+  <p>Acesse seus grupos e despesas de forma segura</p>
+</div>
+
+<div class="cards-grid">
+  <div class="card">
+    <div class="card-header">
+      <h2>Login</h2>
+      <p>Digite seu email para acessar</p>
+    </div>
+    
+    <div class="card-content">
+      <form action="/login" method="post" class="form">
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <select name="email" id="email" required class="form-select">
+            <option value="">Selecione seu usuário</option>
+            {% for user in users %}
+            <option value="{{ user.email }}">{{ user.name }} ({{ user.email }})</option>
+            {% endfor %}
+          </select>
+          <small class="form-help">Selecione seu usuário da lista ou crie um novo abaixo</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+          </svg>
+          Entrar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Novo usuário?</h2>
+      <p>Crie sua conta rapidamente</p>
+    </div>
+    
+    <div class="card-content">
+      <form action="/users" method="post" class="form">
+        <div class="form-group">
+          <label for="name">Nome:</label>
+          <input type="text" name="name" id="name" required class="form-input" placeholder="Seu nome completo">
+        </div>
+        
+        <div class="form-group">
+          <label for="new_email">Email:</label>
+          <input type="email" name="email" id="new_email" required class="form-input" placeholder="seu@email.com">
+        </div>
+        
+        <button type="submit" class="btn btn-secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+          Criar conta
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Sobre o controle de acesso</h2>
+  </div>
+  <div class="card-content">
+    <p>Agora o DividaFácil possui controle de acesso básico:</p>
+    <ul>
+      <li>Cada usuário só pode ver grupos dos quais é membro</li>
+      <li>Apenas membros de um grupo podem criar, ver e editar despesas do grupo</li>
+      <li>Suas informações pessoais ficam protegidas</li>
+      <li>Login simificado por email (ideal para demonstração)</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "DividaFácil",
+    "tagline": "Divida despesas facilmente"
+  },
+  "navigation": {
+    "go_to_dashboard": "Ir para o painel",
+    "demo_active": "Demo Ativa",
+    "language": "Idioma"
+  },
+  "dashboard": {
+    "main_panel": "Painel Principal",
+    "manage_expenses": "Gerencie suas",
+    "expenses": "despesas",
+    "create_users_description": "Crie usuários, forme grupos e divida despesas de forma inteligente e transparente",
+    "users": "Usuários",
+    "add_user": "Adicionar usuário",
+    "add_people_to_system": "Adicione pessoas ao sistema",
+    "full_name": "Nome completo",
+    "full_name_placeholder": "Ex: João Silva",
+    "email": "E-mail",
+    "email_placeholder": "joao@exemplo.com",
+    "user_name_aria": "Nome do usuário",
+    "user_email_aria": "E-mail do usuário",
+    "groups": "Grupos",
+    "add_group": "Adicionar grupo",
+    "organize_people": "Organize pessoas em grupos",
+    "no_users_yet": "Nenhum usuário ainda",
+    "no_users_message": "Comece adicionando usuários para criar grupos",
+    "no_groups_yet": "Nenhum grupo ainda",
+    "no_groups_message": "Crie grupos para organizar despesas entre usuários",
+    "group_members": "Membros do grupo",
+    "create_group": "Criar grupo",
+    "open_group": "Abrir",
+    "users_registered": "Usuários cadastrados",
+    "groups_created": "Grupos criados",
+    "expenses_registered": "Despesas registradas"
+  },
+  "footer": {
+    "made_with": "Feito com FastAPI + Tailwind CSS"
+  },
+  "forms": {
+    "group_name": "Nome do grupo",
+    "group_name_placeholder": "Ex: Casa Compartilhada",
+    "select_members": "Selecionar membros",
+    "group_name_aria": "Nome do grupo",
+    "select_members_aria": "Selecionar membros do grupo"
+  }
+}
