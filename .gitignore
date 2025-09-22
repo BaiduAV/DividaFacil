@@ -42,3 +42,4 @@ node_modules/
 
 # Docker
 *.tar
+RELATIONSHIP_FIX_EXAMPLE.md

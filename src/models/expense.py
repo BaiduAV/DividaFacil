@@ -11,6 +11,7 @@ class Expense:
     description: str
     paid_by: str  # user_id who paid
     split_among: List[str]  # List of user_ids
+    created_by: Optional[str] = None  # user_id who created this expense
     split_type: str = 'EQUAL'  # 'EQUAL', 'EXACT', or 'PERCENTAGE'
     split_values: Dict[str, float] = field(default_factory=dict)  # user_id -> amount/percentage
     created_at: datetime = field(default_factory=datetime.now)

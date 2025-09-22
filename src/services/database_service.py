@@ -52,6 +52,13 @@ class DatabaseService:
             return user_repo.create(name, email)
     
     @staticmethod
+    def create_user_with_password(name: str, email: str, password_hash: str) -> User:
+        """Create a new user with password hash."""
+        with DatabaseService.get_session() as db:
+            user_repo = UserRepository(db)
+            return user_repo.create_with_password(name, email, password_hash)
+    
+    @staticmethod
     def create_group(name: str, member_ids: List[str] | None = None) -> Group:
         """Create a new group with optional member IDs."""
         with DatabaseService.get_session() as db:

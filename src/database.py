@@ -13,8 +13,7 @@ from sqlalchemy import (
     Table,
     JSON,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
 # Database URL - default to SQLite local file, overridable via env
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dividafacil.db")
@@ -61,6 +60,7 @@ class UserDB(Base):
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password_hash = Column(String, nullable=True)  # For authentication, nullable for backward compatibility
     balance = Column(JSON, default=dict)  # Store as JSON: {"user_id": amount}
     notification_preferences = Column(JSON, default=lambda: {
         'email_overdue': True,
@@ -69,9 +69,10 @@ class UserDB(Base):
     })  # Store notification settings as JSON
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
+    # Relationships - specify foreign_keys to avoid ambiguity
     groups = relationship("GroupDB", secondary=group_members, back_populates="members")
-    paid_expenses = relationship("ExpenseDB", back_populates="payer")
+    paid_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.paid_by", back_populates="payer", foreign_keys="ExpenseDB.paid_by")
+    created_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.created_by")
 
 
 class GroupDB(Base):
@@ -93,6 +94,7 @@ class ExpenseDB(Base):
     description = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     paid_by = Column(String, ForeignKey("users.id"), nullable=False)
+    created_by = Column(String, ForeignKey("users.id"), nullable=True)  # Initially nullable for backward compatibility
     group_id = Column(String, ForeignKey("groups.id"), nullable=False)
     split_type = Column(String, nullable=False)  # EQUAL, EXACT, PERCENTAGE
     split_values = Column(JSON, default=dict)  # Store as JSON: {"user_id": value}
@@ -101,7 +103,8 @@ class ExpenseDB(Base):
     first_due_date = Column(DateTime)
     
     # Relationships
-    payer = relationship("UserDB", back_populates="paid_expenses")
+    payer = relationship("UserDB", foreign_keys=[paid_by], back_populates="paid_expenses", foreign_keys=[paid_by])
+    creator = relationship("UserDB", foreign_keys=[created_by], overlaps="created_expenses")
     group = relationship("GroupDB", back_populates="expenses")
     split_among_users = relationship("UserDB", secondary=expense_split_among)
     installments = relationship("InstallmentDB", back_populates="expense", cascade="all, delete-orphan")

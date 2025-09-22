@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from typing import Dict, List, Optional, Union
 import uuid
 from datetime import datetime
@@ -12,14 +13,18 @@ from src.models.user import User
 from src.models.group import Group
 from src.models.expense import Expense
 from src.services.expense_service import ExpenseService
+from src.services.database_service import DatabaseService
 from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
 from src.state import USERS, GROUPS
+from src.services.session_manager import SessionManager
+from src.services.database_service import DatabaseService
 from src.auth import get_current_user, get_current_user_id
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
+from src.routers.auth import router as auth_router
 from src.routers.auth import router as auth_router
 from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
@@ -29,6 +34,9 @@ from src.routers.api_expenses import router as api_expenses_router
 settings = get_settings()
 app = FastAPI(title=settings.APP_NAME)
 configure_logging(settings.LOG_LEVEL)
+
+# Add session middleware for authentication
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 
 def create_app() -> FastAPI:
     """Minimal application factory returning the configured FastAPI app.
@@ -44,6 +52,7 @@ def create_app() -> FastAPI:
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
 # Routers (preserve existing URLs)
+app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(groups_router)
 app.include_router(expenses_router)
@@ -97,32 +106,68 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 async def healthz():
     return {"status": "ok"}
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
-    if not current_user:
-        # Show login page if not authenticated
+from src.auth import get_current_user_from_session, login_user, logout_user
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Show login page."""
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "users": list(USERS.values())}
+    )
+
+@app.post("/login")
+async def login(request: Request, user_id: str = Form(...)):
+    """Login user by setting session."""
+    user = DatabaseService.get_user(user_id)
+    if not user:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "users": list(USERS.values())},
+            {"request": request, "users": list(USERS.values()), "error": "User not found"}
         )
     
-    # Get groups where current user is a member
-    user_groups = [group for group in GROUPS.values() 
-                   if current_user.id in group.members]
+    login_user(request, user)
+    return RedirectResponse("/", status_code=303)
+
+@app.post("/logout")
+async def logout(request: Request):
+    """Logout current user."""
+    logout_user(request)
+    return RedirectResponse("/login", status_code=303)
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    # Check if user is authenticated
+    current_user = get_current_user_from_session(request)
+    if not current_user:
+        return RedirectResponse("/login", status_code=303)
     
-    # Recompute balances for user's groups only
-    for g in user_groups:
-        ExpenseService.recompute_group_balances(g)
+    # Get user's groups and expenses
+    user_groups = []
+    user_expenses = []
+    
+    # Get all groups where the user is a member
+    for group in GROUPS.values():
+        if current_user.id in group.members:
+            ExpenseService.recompute_group_balances(group)
+            user_groups.append(group)
+            # Get expenses created by this user, or fallback to paid_by for legacy data
+            user_expenses.extend([
+                exp for exp in group.expenses 
+                if (exp.created_by == current_user.id) or 
+                   (exp.created_by is None and exp.paid_by == current_user.id)
+            ])
     
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "current_user": current_user,
-            "users": [current_user],  # Only show current user
-            "groups": user_groups,  # Only show user's groups
-            # Total number of expenses across user's groups
-            "total_expenses": sum(len(g.expenses) for g in user_groups),
+            "users": list(USERS.values()),
+            "groups": user_groups,
+            "user_expenses": user_expenses,
+            # Total number of expenses created by this user
+            "total_expenses": len(user_expenses),
         },
     )
 
