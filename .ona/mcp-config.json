@@ -1,9 +1,24 @@
 {
-  "inputs": [],
-  "servers": {
-    "figmaRemoteMcp": {
-      "url": "https://mcp.figma.com/mcp",
-      "type": "http"
+  "mcpServers": {
+    "github": {
+      "name": "github",
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "ghcr.io/github/github-mcp-server"],
+      "disabled": false,
+      "timeout": 30
+    },
+    "render": {
+      "name": "render",
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.render.com/mcp",
+        "--header",
+        "Authorization: Bearer ${RENDER_API_KEY}"
+      ],
+      "env": {
+        "RENDER_API_KEY": "${exec:printenv RENDER_API_KEY}"
+      }
     }
   }
 }
