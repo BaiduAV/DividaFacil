@@ -20,7 +20,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 ENV LOG_LEVEL=INFO \
-    APP_NAME="Splitwise Web" \
+    APP_NAME="DividaFácil" \
     STATIC_DIR=static \
     TEMPLATES_DIR=templates
 

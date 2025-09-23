@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from web_app import app
-from src.auth import clear_all_sessions
+# Authentication functions are tested via web endpoints
 from src.services.database_service import DatabaseService
 
 
@@ -18,7 +18,8 @@ def client():
 @pytest.fixture(autouse=True)
 def clean_sessions():
     """Clear all sessions before each test."""
-    clear_all_sessions()
+    # Sessions are now handled by FastAPI's session middleware
+    pass
 
 
 @pytest.fixture

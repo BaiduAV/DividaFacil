@@ -1,34 +1,32 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel, validator
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
 from typing import Optional
-from src.services.user_service import UserService
-from src.utils.password_validation import validate_password
+from src.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 class AuthSchema(BaseModel):
-    username: str
+    email: str
     password: str
 
-    @validator("password")
-    def password_validator(cls, v):
-        validate_password(v)
-        return v
+class RegisterSchema(BaseModel):
+    name: str
+    email: str
+    password: str
 
 @router.post("/login")
 def login(auth: AuthSchema):
-    user = UserService.authenticate(auth.username, auth.password)
+    user = AuthService.authenticate_user(auth.email, auth.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário ou senha inválidos"
+            detail="Email ou senha inválidos"
         )
     return {"message": "Login realizado com sucesso", "user_id": user.id}
 
 @router.post("/register")
-def register(auth: AuthSchema):
-    # Password validation is already handled by AuthSchema
-    user = UserService.create_user(auth.username, auth.password)
+def register(auth: RegisterSchema):
+    user = AuthService.register_user(auth.name, auth.email, auth.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

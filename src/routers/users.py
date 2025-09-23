@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form, Request, HTTPException
 from fastapi.responses import RedirectResponse
 
 from src.services.database_service import DatabaseService
-from src.services.session_manager import SessionManager
+from src.auth import get_current_user_from_session
 
 router = APIRouter()
 
@@ -10,8 +10,8 @@ router = APIRouter()
 @router.post("/users")
 async def create_user(request: Request, name: str = Form(...), email: str = Form(...)):
     # Check if user is authenticated
-    user_id = SessionManager.get_user_id(request)
-    if not user_id:
+    current_user = get_current_user_from_session(request)
+    if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required")
     
     DatabaseService.create_user(name, email)

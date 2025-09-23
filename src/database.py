@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Table,
     JSON,
+    Index,
 )
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
@@ -59,7 +60,7 @@ class UserDB(Base):
     
     id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False, unique=True)
+    email = Column(String, nullable=False, unique=True, index=True)  # Index for login lookups
     password_hash = Column(String, nullable=True)  # For authentication, nullable for backward compatibility
     balance = Column(JSON, default=dict)  # Store as JSON: {"user_id": amount}
     notification_preferences = Column(JSON, default=lambda: {
@@ -71,7 +72,7 @@ class UserDB(Base):
     
     # Relationships - specify foreign_keys to avoid ambiguity
     groups = relationship("GroupDB", secondary=group_members, back_populates="members")
-    paid_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.paid_by", back_populates="payer", foreign_keys="ExpenseDB.paid_by")
+    paid_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.paid_by", back_populates="payer")
     created_expenses = relationship("ExpenseDB", foreign_keys="ExpenseDB.created_by")
 
 
@@ -93,17 +94,17 @@ class ExpenseDB(Base):
     id = Column(String, primary_key=True)
     description = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
-    paid_by = Column(String, ForeignKey("users.id"), nullable=False)
-    created_by = Column(String, ForeignKey("users.id"), nullable=True)  # Initially nullable for backward compatibility
-    group_id = Column(String, ForeignKey("groups.id"), nullable=False)
+    paid_by = Column(String, ForeignKey("users.id"), nullable=False, index=True)  # Index for user expense queries
+    created_by = Column(String, ForeignKey("users.id"), nullable=True, index=True)  # Index for creator queries
+    group_id = Column(String, ForeignKey("groups.id"), nullable=False, index=True)  # Index for group expense queries
     split_type = Column(String, nullable=False)  # EQUAL, EXACT, PERCENTAGE
     split_values = Column(JSON, default=dict)  # Store as JSON: {"user_id": value}
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)  # Index for date-based queries
     installments_count = Column(Integer, default=1)
     first_due_date = Column(DateTime)
     
     # Relationships
-    payer = relationship("UserDB", foreign_keys=[paid_by], back_populates="paid_expenses", foreign_keys=[paid_by])
+    payer = relationship("UserDB", foreign_keys=[paid_by], back_populates="paid_expenses")
     creator = relationship("UserDB", foreign_keys=[created_by], overlaps="created_expenses")
     group = relationship("GroupDB", back_populates="expenses")
     split_among_users = relationship("UserDB", secondary=expense_split_among)
@@ -114,11 +115,11 @@ class InstallmentDB(Base):
     __tablename__ = "installments"
     
     id = Column(String, primary_key=True)
-    expense_id = Column(String, ForeignKey("expenses.id"), nullable=False)
+    expense_id = Column(String, ForeignKey("expenses.id"), nullable=False, index=True)  # Index for expense installment queries
     number = Column(Integer, nullable=False)
     amount = Column(Float, nullable=False)
-    due_date = Column(DateTime, nullable=False)
-    paid = Column(Boolean, default=False)
+    due_date = Column(DateTime, nullable=False, index=True)  # Index for due date queries (notifications)
+    paid = Column(Boolean, default=False, index=True)  # Index for payment status queries
     paid_at = Column(DateTime)
     
     # Relationships

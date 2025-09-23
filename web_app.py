@@ -1,30 +1,21 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Depends
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from typing import Dict, List, Optional, Union
-import uuid
-from datetime import datetime
 import logging
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.models.user import User
 from src.models.group import Group
-from src.models.expense import Expense
-from src.services.expense_service import ExpenseService
 from src.services.database_service import DatabaseService
 from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
 from src.state import USERS, GROUPS
-from src.services.session_manager import SessionManager
 from src.services.database_service import DatabaseService
-from src.auth import get_current_user, get_current_user_id
+from src.auth import get_current_user_from_session, require_authentication
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
-from src.routers.auth import router as auth_router
 from src.routers.auth import router as auth_router
 from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
@@ -56,20 +47,14 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(groups_router)
 app.include_router(expenses_router)
-app.include_router(auth_router)
 
 # API routers with JSON responses
 app.include_router(api_users_router)
 app.include_router(api_groups_router)
 app.include_router(api_expenses_router)
 
-# Helpers
-
-def get_group_or_404(group_id: str) -> Group:
-    group = GROUPS.get(group_id)
-    if not group:
-        raise HTTPException(status_code=404, detail="Grupo não encontrado")
-    return group
+# Import helper functions
+from src.routers.common import get_group_or_404
 
 
 @app.exception_handler(StarletteHTTPException)

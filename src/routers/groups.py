@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from src.state import USERS
 from src.services.database_service import DatabaseService
 from src.services.expense_service import ExpenseService
-from src.services.session_manager import SessionManager
+from src.auth import get_current_user_from_session
 from src.template_engine import templates
 from .common import get_group_or_404
 
@@ -14,8 +14,8 @@ router = APIRouter()
 @router.post("/groups")
 async def create_group(request: Request, name: str = Form(...)):
     # Check if user is authenticated
-    user_id = SessionManager.get_user_id(request)
-    if not user_id:
+    current_user = get_current_user_from_session(request)
+    if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required")
         
     # Safely handle single or multiple checkboxes
@@ -23,8 +23,8 @@ async def create_group(request: Request, name: str = Form(...)):
     member_ids = form.getlist("member_ids")
     
     # Ensure the current user is included in the group
-    if user_id not in member_ids:
-        member_ids.append(user_id)
+    if current_user.id not in member_ids:
+        member_ids.append(current_user.id)
     
     group = DatabaseService.create_group(name, member_ids)
     return RedirectResponse(f"/groups/{group.id}", status_code=303)
