@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
-from src.state import GROUPS
 from src.models.group import Group
+from src.state import GROUPS
 
 
 def get_group_or_404(group_id: str) -> Group:

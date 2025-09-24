@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Form, Request, HTTPException
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
 from src.services.database_service import DatabaseService
-from src.auth import get_current_user_from_session
 
 router = APIRouter()
 

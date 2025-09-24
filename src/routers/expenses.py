@@ -1,16 +1,17 @@
+import uuid
 from datetime import datetime
 from typing import Dict, Optional
-import uuid
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from src.state import USERS
-from src.models.expense import Expense
-from src.services.expense_service import ExpenseService
-from src.services.database_service import DatabaseService
-from src.template_engine import templates
 from src.auth import require_authentication
+from src.models.expense import Expense
+from src.services.database_service import DatabaseService
+from src.services.expense_service import ExpenseService
+from src.state import USERS
+from src.template_engine import templates
+
 from .common import get_group_or_404
 
 router = APIRouter()
@@ -29,7 +30,7 @@ async def add_expense(
 ):
     # Require authentication
     current_user = require_authentication(request)
-    
+
     group = get_group_or_404(group_id)
     if paid_by not in group.members:
         raise HTTPException(status_code=400, detail="Quem pagou deve ser um membro do grupo")
@@ -43,13 +44,16 @@ async def add_expense(
             key = f"value_{uid}"
             if key in form and form[key] != "":
                 try:
-                    split_values[uid] = float(str(form[key]).replace(',', '.'))
+                    split_values[uid] = float(str(form[key]).replace(",", "."))
                 except ValueError:
                     ExpenseService.recompute_group_balances(group)
                     transactions = ExpenseService.simplify_balances(group.members)
                     monthly = ExpenseService.compute_monthly_analysis(group)
                     monthly_transactions = ExpenseService.compute_monthly_transactions(monthly)
-                    expense_remaining = {e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses}
+                    expense_remaining = {
+                        e.id: ExpenseService.compute_expense_remaining(e, group)
+                        for e in group.expenses
+                    }
                     return templates.TemplateResponse(
                         "group_detail.html",
                         {
@@ -71,7 +75,9 @@ async def add_expense(
                 transactions = ExpenseService.simplify_balances(group.members)
                 monthly = ExpenseService.compute_monthly_analysis(group)
                 monthly_transactions = ExpenseService.compute_monthly_transactions(monthly)
-                expense_remaining = {e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses}
+                expense_remaining = {
+                    e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses
+                }
                 return templates.TemplateResponse(
                     "group_detail.html",
                     {
@@ -93,7 +99,9 @@ async def add_expense(
                 transactions = ExpenseService.simplify_balances(group.members)
                 monthly = ExpenseService.compute_monthly_analysis(group)
                 monthly_transactions = ExpenseService.compute_monthly_transactions(monthly)
-                expense_remaining = {e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses}
+                expense_remaining = {
+                    e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses
+                }
                 return templates.TemplateResponse(
                     "group_detail.html",
                     {
@@ -111,7 +119,7 @@ async def add_expense(
 
     # Use the provided date for both created_at and first_due_date if specified
     expense_date = datetime.fromisoformat(first_due_date) if first_due_date else datetime.now()
-    
+
     expense = Expense(
         id=str(uuid.uuid4()),
         amount=amount,
@@ -139,10 +147,10 @@ async def add_expense(
 async def pay_installment(group_id: str, expense_id: str, number: int, request: Request):
     # Require authentication
     require_authentication(request)
-    
+
     if not DatabaseService.pay_installment(expense_id, number):
         raise HTTPException(status_code=404, detail="Parcela não encontrada ou já paga")
-    
+
     # Recompute balances and save to database
     group = DatabaseService.get_group(group_id)
     ExpenseService.recompute_group_balances(group)
@@ -162,17 +170,19 @@ async def edit_expense(
 ):
     # Require authentication
     current_user = require_authentication(request)
-    
+
     group = get_group_or_404(group_id)
     exp = next((e for e in group.expenses if e.id == expense_id), None)
     if not exp:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
-    
+
     # Only allow the creator to edit the expense (or paid_by for legacy data)
-    if not ((exp.created_by == current_user.id) or 
-            (exp.created_by is None and exp.paid_by == current_user.id)):
+    if not (
+        (exp.created_by == current_user.id)
+        or (exp.created_by is None and exp.paid_by == current_user.id)
+    ):
         raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode editá-la")
-        
+
     if paid_by not in group.members:
         raise HTTPException(status_code=400, detail="Quem pagou deve ser um membro do grupo")
 
@@ -183,7 +193,7 @@ async def edit_expense(
             key = f"split_values[{uid}]"
             if key in form and form.get(key) not in (None, ""):
                 try:
-                    split_values[uid] = float(str(form.get(key)).replace(',', '.'))
+                    split_values[uid] = float(str(form.get(key)).replace(",", "."))
                 except ValueError:
                     return RedirectResponse(
                         f"/groups/{group_id}?error=Valor%20inv%C3%A1lido%20para%20{group.members[uid].name}",
@@ -217,7 +227,7 @@ async def edit_expense(
         ExpenseService.generate_installments(exp)
 
     DatabaseService.update_expense(exp)
-    
+
     group = DatabaseService.get_group(group_id)
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
@@ -233,15 +243,17 @@ async def update_expense_date(
 ):
     # Require authentication
     current_user = require_authentication(request)
-    
+
     group = DatabaseService.get_group(group_id)
     exp = next((e for e in group.expenses if e.id == expense_id), None)
     if not exp:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
-    
+
     # Only allow the creator to edit the expense (or paid_by for legacy data)
-    if not ((exp.created_by == current_user.id) or 
-            (exp.created_by is None and exp.paid_by == current_user.id)):
+    if not (
+        (exp.created_by == current_user.id)
+        or (exp.created_by is None and exp.paid_by == current_user.id)
+    ):
         raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode editá-la")
     try:
         new_dt = datetime.fromisoformat(date)
@@ -251,10 +263,10 @@ async def update_expense_date(
     if exp.installments_count and exp.installments_count > 1:
         exp.first_due_date = new_dt
         ExpenseService.generate_installments(exp)
-    
+
     # Update in database
     DatabaseService.update_expense(exp)
-    
+
     # Recompute balances and save to database
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
@@ -265,21 +277,23 @@ async def update_expense_date(
 async def delete_expense(group_id: str, expense_id: str, request: Request):
     # Require authentication
     current_user = require_authentication(request)
-    
+
     # Check if expense exists and user is the creator
     group = DatabaseService.get_group(group_id)
     exp = next((e for e in group.expenses if e.id == expense_id), None)
     if not exp:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
-    
+
     # Only allow the creator to delete the expense (or paid_by for legacy data)
-    if not ((exp.created_by == current_user.id) or 
-            (exp.created_by is None and exp.paid_by == current_user.id)):
+    if not (
+        (exp.created_by == current_user.id)
+        or (exp.created_by is None and exp.paid_by == current_user.id)
+    ):
         raise HTTPException(status_code=403, detail="Apenas o criador da despesa pode excluí-la")
-    
+
     if not DatabaseService.delete_expense(expense_id):
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
-    
+
     # Recompute balances and save to database
     group = DatabaseService.get_group(group_id)
     ExpenseService.recompute_group_balances(group)

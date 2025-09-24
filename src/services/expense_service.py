@@ -1,34 +1,42 @@
 """Service for handling expense-related operations."""
 
-from typing import Dict, List, Optional, Tuple
-from datetime import timedelta
-from dateutil.relativedelta import relativedelta
-from decimal import Decimal, ROUND_HALF_UP
 import logging
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Dict, List
 
+from dateutil.relativedelta import relativedelta
+
+from ..constants import (
+    ERROR_INVALID_SPLIT_TYPE,
+    ERROR_NO_SPLIT_VALUES,
+    ERROR_NO_USERS_TO_SPLIT,
+    MIN_BALANCE_THRESHOLD,
+    PERCENTAGE_BASE,
+    SPLIT_EQUAL,
+    SPLIT_EXACT,
+    SPLIT_PERCENTAGE,
+)
 from ..models.expense import Expense
-from ..models.user import User
 from ..models.group import Group
 from ..models.installment import Installment
-from ..constants import (
-    MIN_BALANCE_THRESHOLD, DECIMAL_PLACES, PERCENTAGE_BASE,
-    SPLIT_EQUAL, SPLIT_EXACT, SPLIT_PERCENTAGE,
-    ERROR_USER_NOT_FOUND, ERROR_NO_USERS_TO_SPLIT, ERROR_NO_SPLIT_VALUES, ERROR_INVALID_SPLIT_TYPE
-)
+from ..models.user import User
 
 logger = logging.getLogger(__name__)
 
+
 class ExpenseCalculationError(Exception):
     """Raised when expense calculation fails."""
+
     pass
+
 
 class ExpenseService:
     """Service for handling expense-related operations."""
-    
+
     @classmethod
     def calculate_balances(cls, expense: Expense, users: Dict[str, User]) -> None:
         """Update user balances based on an expense.
-        
+
         Args:
             expense: The expense to process
             users: Dictionary of user_id to User objects
@@ -87,7 +95,9 @@ class ExpenseService:
 
         if abs(diff) > 0:
             # Assign remainder to the last non-payer if possible, else payer
-            candidates = [uid for uid in expense.split_among if uid != expense.paid_by] or [expense.paid_by]
+            candidates = [uid for uid in expense.split_among if uid != expense.paid_by] or [
+                expense.paid_by
+            ]
             portions[candidates[-1]] += diff
             portions[candidates[-1]] = cls._round_decimal(portions[candidates[-1]])
 
@@ -99,8 +109,10 @@ class ExpenseService:
         if not expense.split_values:
             raise ExpenseCalculationError(ERROR_NO_SPLIT_VALUES)
 
-        return {uid: cls._round_decimal(Decimal(str(amount)))
-                for uid, amount in expense.split_values.items()}
+        return {
+            uid: cls._round_decimal(Decimal(str(amount)))
+            for uid, amount in expense.split_values.items()
+        }
 
     @classmethod
     def _calculate_percentage_split(cls, expense: Expense, amount: Decimal) -> Dict[str, Decimal]:
@@ -116,8 +128,9 @@ class ExpenseService:
         return portions
 
     @classmethod
-    def _update_user_balances(cls, expense: Expense, payer: User,
-                            users: Dict[str, User], portions: Dict[str, Decimal]) -> None:
+    def _update_user_balances(
+        cls, expense: Expense, payer: User, users: Dict[str, User], portions: Dict[str, Decimal]
+    ) -> None:
         """Update user balances based on calculated portions."""
         for user_id, amount in portions.items():
             if user_id == expense.paid_by:
@@ -134,15 +147,12 @@ class ExpenseService:
     @classmethod
     def _round_decimal(cls, value: Decimal) -> Decimal:
         """Round decimal to appropriate precision."""
-        return value.quantize(
-            Decimal('0.01'),
-            rounding=ROUND_HALF_UP
-        )
+        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     @classmethod
     def simplify_balances(cls, users: Dict[str, User]) -> List[Dict[str, any]]:
         """Simplify the balances between users to minimize transactions.
-        
+
         Returns a list of transactions needed to settle all balances.
         """
         try:
@@ -156,10 +166,10 @@ class ExpenseService:
     def _calculate_net_balances(cls, users: Dict[str, User]) -> Dict[str, Decimal]:
         """Calculate net balance for each user."""
         balances = {}
-        
+
         for user_id, user in users.items():
-            net_balance = Decimal('0.0')
-            for other_id, amount in user.balance.items():
+            net_balance = Decimal("0.0")
+            for _other_id, amount in user.balance.items():
                 net_balance += Decimal(str(amount))
 
             # Only include significant balances
@@ -173,24 +183,22 @@ class ExpenseService:
         """Compute the minimum transactions needed to settle balances."""
         # Sort users by balance (debtors first, then creditors)
         sorted_balances = sorted(balances.items(), key=lambda x: x[1])
-        
+
         transactions = []
         i, j = 0, len(sorted_balances) - 1
-        
+
         while i < j:
             debtor, debt = sorted_balances[i]
             creditor, credit = sorted_balances[j]
-            
+
             # Calculate the minimum amount to settle
             amount = min(abs(debt), credit)
-            
+
             if amount > MIN_BALANCE_THRESHOLD:
-                transactions.append({
-                    'from': debtor,
-                    'to': creditor,
-                    'amount': float(cls._round_decimal(amount))
-                })
-            
+                transactions.append(
+                    {"from": debtor, "to": creditor, "amount": float(cls._round_decimal(amount))}
+                )
+
             # Update balances
             if abs(debt) > credit:
                 sorted_balances[i] = (debtor, debt + amount)
@@ -251,13 +259,7 @@ class ExpenseService:
 
         for i, amount in enumerate(amounts):
             due_date = base_date + relativedelta(months=+i)
-            installments.append(
-                Installment(
-                    number=i + 1,
-                    due_date=due_date,
-                    amount=float(amount)
-                )
-            )
+            installments.append(Installment(number=i + 1, due_date=due_date, amount=float(amount)))
 
         return installments
 
@@ -267,27 +269,31 @@ class ExpenseService:
         # reset balances
         for u in group.members.values():
             u.balance.clear()
-        
+
         for exp in group.expenses:
             payer = group.members[exp.paid_by]
             # Determine portion per user for this expense
             portions: Dict[str, float] = {}
-            if exp.split_type == 'EQUAL':
+            if exp.split_type == "EQUAL":
                 per_person = exp.amount / len(exp.split_among)
                 portions = {uid: round(per_person, 2) for uid in exp.split_among}
                 diff = round(exp.amount - sum(portions.values()), 2)
                 if abs(diff) > 0:
-                    candidates = [uid for uid in exp.split_among if uid != exp.paid_by] or [exp.paid_by]
+                    candidates = [uid for uid in exp.split_among if uid != exp.paid_by] or [
+                        exp.paid_by
+                    ]
                     portions[candidates[-1]] = round(portions.get(candidates[-1], 0.0) + diff, 2)
-            elif exp.split_type == 'EXACT':
+            elif exp.split_type == "EXACT":
                 portions = dict(exp.split_values)
-            elif exp.split_type == 'PERCENTAGE':
+            elif exp.split_type == "PERCENTAGE":
                 for uid, pct in exp.split_values.items():
                     portions[uid] = (exp.amount * pct) / 100.0
 
             if exp.installments_count > 1 and exp.installments:
                 # Only count unpaid installments toward balances
-                unpaid_ratio = sum(inst.amount for inst in exp.installments if not inst.paid) / exp.amount
+                unpaid_ratio = (
+                    sum(inst.amount for inst in exp.installments if not inst.paid) / exp.amount
+                )
                 if unpaid_ratio <= 0:
                     continue
                 for uid, amt in portions.items():
@@ -321,13 +327,13 @@ class ExpenseService:
         for exp in group.expenses:
             # Determine portions per user
             portions: Dict[str, float] = {}
-            if exp.split_type == 'EQUAL':
+            if exp.split_type == "EQUAL":
                 per_person = exp.amount / len(exp.split_among)
                 for uid in exp.split_among:
                     portions[uid] = per_person
-            elif exp.split_type == 'EXACT':
+            elif exp.split_type == "EXACT":
                 portions = dict(exp.split_values)
-            elif exp.split_type == 'PERCENTAGE':
+            elif exp.split_type == "PERCENTAGE":
                 for uid, pct in exp.split_values.items():
                     portions[uid] = (exp.amount * pct) / 100.0
 
@@ -337,7 +343,7 @@ class ExpenseService:
                     if inst.paid:
                         # Analysis is about obligation timing; include paid installments in their due month
                         pass
-                    month = inst.due_date.strftime('%Y-%m')
+                    month = inst.due_date.strftime("%Y-%m")
                     ratio = inst.amount / total if total else 0
                     for uid, amt in portions.items():
                         if uid == exp.paid_by:
@@ -346,7 +352,7 @@ class ExpenseService:
                         add(month, exp.paid_by, owed)
                         add(month, uid, -owed)
             else:
-                month = exp.created_at.strftime('%Y-%m')
+                month = exp.created_at.strftime("%Y-%m")
                 for uid, amt in portions.items():
                     if uid == exp.paid_by:
                         continue
@@ -384,7 +390,7 @@ class ExpenseService:
                 creditor, credit = sorted_balances[j]
                 amount = min(abs(debt), credit)
                 if amount > 0.01:
-                    tx.append({'from': debtor, 'to': creditor, 'amount': round(amount, 2)})
+                    tx.append({"from": debtor, "to": creditor, "amount": round(amount, 2)})
                 if abs(debt) > credit:
                     sorted_balances[i] = (debtor, debt + amount)
                     j -= 1
@@ -407,22 +413,26 @@ class ExpenseService:
         For installment expenses, only unpaid installments ratio counts.
         """
         portions: Dict[str, float] = {}
-        if expense.split_type == 'EQUAL':
+        if expense.split_type == "EQUAL":
             per_person = expense.amount / len(expense.split_among)
             portions = {uid: round(per_person, 2) for uid in expense.split_among}
             diff = round(expense.amount - sum(portions.values()), 2)
             if abs(diff) > 0:
-                candidates = [uid for uid in expense.split_among if uid != expense.paid_by] or [expense.paid_by]
+                candidates = [uid for uid in expense.split_among if uid != expense.paid_by] or [
+                    expense.paid_by
+                ]
                 portions[candidates[-1]] = round(portions.get(candidates[-1], 0.0) + diff, 2)
-        elif expense.split_type == 'EXACT':
+        elif expense.split_type == "EXACT":
             portions = dict(expense.split_values)
-        elif expense.split_type == 'PERCENTAGE':
+        elif expense.split_type == "PERCENTAGE":
             for uid, pct in expense.split_values.items():
                 portions[uid] = (expense.amount * pct) / 100.0
 
         remaining: Dict[str, float] = {}
         if expense.installments_count > 1 and expense.installments:
-            unpaid_ratio = sum(inst.amount for inst in expense.installments if not inst.paid) / expense.amount
+            unpaid_ratio = (
+                sum(inst.amount for inst in expense.installments if not inst.paid) / expense.amount
+            )
             if unpaid_ratio <= 0:
                 return {}
             for uid, amt in portions.items():

@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
-from typing import List, Optional, Dict
 import uuid
+from typing import Dict, List, Optional
+
+from sqlalchemy.orm import Session
 
 from src.database import UserDB
 from src.models.user import User
@@ -13,17 +14,9 @@ class UserRepository:
     def create(self, name: str, email: str) -> User:
         """Create a new user in the database."""
         user_id = str(uuid.uuid4())
-        default_prefs = {
-            'email_overdue': True,
-            'email_upcoming': True,
-            'days_ahead_reminder': 3
-        }
+        default_prefs = {"email_overdue": True, "email_upcoming": True, "days_ahead_reminder": 3}
         db_user = UserDB(
-            id=user_id,
-            name=name,
-            email=email,
-            balance={},
-            notification_preferences=default_prefs
+            id=user_id, name=name, email=email, balance={}, notification_preferences=default_prefs
         )
         self.db.add(db_user)
         self.db.commit()
@@ -33,18 +26,14 @@ class UserRepository:
     def create_with_password(self, name: str, email: str, password_hash: str) -> User:
         """Create a new user with password hash in the database."""
         user_id = str(uuid.uuid4())
-        default_prefs = {
-            'email_overdue': True,
-            'email_upcoming': True,
-            'days_ahead_reminder': 3
-        }
+        default_prefs = {"email_overdue": True, "email_upcoming": True, "days_ahead_reminder": 3}
         db_user = UserDB(
             id=user_id,
             name=name,
             email=email,
             password_hash=password_hash,
             balance={},
-            notification_preferences=default_prefs
+            notification_preferences=default_prefs,
         )
         self.db.add(db_user)
         self.db.commit()
@@ -93,16 +82,12 @@ class UserRepository:
 
     def _to_domain_model(self, db_user: UserDB) -> User:
         """Convert database model to domain model."""
-        default_prefs = {
-            'email_overdue': True,
-            'email_upcoming': True,
-            'days_ahead_reminder': 3
-        }
+        default_prefs = {"email_overdue": True, "email_upcoming": True, "days_ahead_reminder": 3}
         return User(
             id=db_user.id,
             name=db_user.name,
             email=db_user.email,
             balance=db_user.balance or {},
             notification_preferences=db_user.notification_preferences or default_prefs,
-            password_hash=db_user.password_hash
+            password_hash=db_user.password_hash,
         )

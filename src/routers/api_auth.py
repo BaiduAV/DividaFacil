@@ -1,12 +1,15 @@
-from fastapi import APIRouter, HTTPException, Request, Form
+from fastapi import APIRouter, Form, HTTPException, Request
 from pydantic import BaseModel
-from src.services.database_service import DatabaseService
+
 from src.auth import login_user, logout_user
+from src.services.database_service import DatabaseService
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
+
 class LoginRequest(BaseModel):
     email: str
+
 
 @router.post("/login")
 async def api_login(request: Request, email: str = Form(...)):
@@ -19,6 +22,7 @@ async def api_login(request: Request, email: str = Form(...)):
     login_user(request, user)
 
     return {"message": "Login successful", "user_id": user.id, "user_name": user.name}
+
 
 @router.post("/logout")
 async def api_logout(request: Request):

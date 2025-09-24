@@ -1,20 +1,22 @@
 """Dashboard service for handling dashboard-related operations."""
 
-from fastapi import Request
-from fastapi.responses import RedirectResponse, HTMLResponse
-from typing import List, Dict, Any
 import logging
+from typing import Any, Dict, List
+
+from fastapi import Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..auth import get_current_user_from_session
-from ..template_engine import templates
-from ..state import USERS, GROUPS
-from ..services.expense_service import ExpenseService
-from ..models.user import User
-from ..models.group import Group
 from ..models.expense import Expense
+from ..models.group import Group
+from ..models.user import User
 from ..services.database_service import DatabaseService
+from ..services.expense_service import ExpenseService
+from ..state import GROUPS, USERS
+from ..template_engine import templates
 
 logger = logging.getLogger(__name__)
+
 
 class DashboardService:
     """Service for handling dashboard-related operations."""
@@ -37,7 +39,7 @@ class DashboardService:
                     "users": users,
                     "current_user": None,
                     "error": None,
-                }
+                },
             )
         try:
             dashboard_data = cls._prepare_dashboard_data(current_user)
@@ -47,7 +49,7 @@ class DashboardService:
                     "request": request,
                     **dashboard_data,
                     "current_user": current_user,
-                }
+                },
             )
         except Exception:
             logger.exception("Error rendering dashboard")
@@ -91,9 +93,10 @@ class DashboardService:
         user_expenses = []
         for group in user_groups:
             group_expenses = [
-                exp for exp in group.expenses
-                if (exp.created_by == current_user.id) or
-                   (exp.created_by is None and exp.paid_by == current_user.id)
+                exp
+                for exp in group.expenses
+                if (exp.created_by == current_user.id)
+                or (exp.created_by is None and exp.paid_by == current_user.id)
             ]
             user_expenses.extend(group_expenses)
         return user_expenses

@@ -1,8 +1,11 @@
 """Simple session-based authentication for DividaFacil."""
+
 from typing import Optional
+
 from fastapi import HTTPException, Request, status
-from src.services.database_service import DatabaseService
+
 from src.models.user import User
+from src.services.database_service import DatabaseService
 
 
 def get_current_user_from_session(request: Request) -> Optional[User]:
@@ -18,8 +21,7 @@ def require_authentication(request: Request) -> User:
     user = get_current_user_from_session(request)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
     return user
 

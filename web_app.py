@@ -1,25 +1,25 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 from typing import Optional
 
-from src.services.database_service import DatabaseService
-from src.settings import get_settings
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.sessions import SessionMiddleware
+
 from src.logging_config import configure_logging
-from src.template_engine import templates
-from src.auth import get_current_user_from_session
-from src.routers.users import router as users_router
-from src.routers.groups import router as groups_router
-from src.routers.expenses import router as expenses_router
-from src.routers.auth import router as auth_router
-from src.routers.api_users import router as api_users_router
-from src.routers.api_groups import router as api_groups_router
-from src.routers.api_expenses import router as api_expenses_router
 from src.routers.api_auth import router as api_auth_router
+from src.routers.api_expenses import router as api_expenses_router
+from src.routers.api_groups import router as api_groups_router
+from src.routers.api_users import router as api_users_router
+from src.routers.auth import router as auth_router
+from src.routers.expenses import router as expenses_router
+from src.routers.groups import router as groups_router
+from src.routers.users import router as users_router
 from src.routers.web_auth import router as web_auth_router  # added
+from src.services.dashboard_service import DashboardService
+from src.settings import get_settings
+from src.template_engine import templates
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 API_PREFIX = "/api/"
 SESSION_COOKIE_NAME = "session_id"
 HEALTH_CHECK_RESPONSE = {"status": "ok"}
+
 
 class AppFactory:
     """Factory class for creating and configuring the FastAPI application."""
@@ -73,7 +74,7 @@ class AppFactory:
         app.add_middleware(
             SessionMiddleware,
             secret_key=self.settings.SESSION_SECRET_KEY,
-            session_cookie=SESSION_COOKIE_NAME
+            session_cookie=SESSION_COOKIE_NAME,
         )
 
     def _mount_static_files(self, app: FastAPI) -> None:
@@ -116,13 +117,14 @@ class AppFactory:
         async def unhandled_exception_handler(request: Request, exc: Exception):
             return await self._handle_unhandled_exception(request, exc)
 
-    async def _handle_http_exception(self, request: Request, exc: StarletteHTTPException) -> JSONResponse | HTMLResponse:
+    async def _handle_http_exception(
+        self, request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse | HTMLResponse:
         """Handle HTTP exceptions with appropriate response format."""
         # For API requests, return JSON error responses
         if request.url.path.startswith(API_PREFIX):
             return JSONResponse(
-                status_code=exc.status_code,
-                content={"error": "HTTP Error", "detail": exc.detail}
+                status_code=exc.status_code, content={"error": "HTTP Error", "detail": exc.detail}
             )
 
         # Render 404 with template when appropriate
@@ -147,13 +149,13 @@ class AppFactory:
 
     def _add_health_check(self, app: FastAPI) -> None:
         """Add health check endpoint."""
+
         @app.get("/healthz")
         async def healthz():
             return HEALTH_CHECK_RESPONSE
 
     def _add_dashboard_route(self, app: FastAPI) -> None:
         """Add dashboard route."""
-        from src.services.dashboard_service import DashboardService
 
         @app.get("/", response_class=HTMLResponse)
         async def dashboard(request: Request):
@@ -163,6 +165,7 @@ class AppFactory:
 # Create application instance
 app_factory = AppFactory()
 app = app_factory.create_app()
+
 
 def create_app() -> FastAPI:
     """Application factory function for backward compatibility."""

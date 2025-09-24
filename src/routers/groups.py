@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
-from src.state import USERS
+from src.auth import get_current_user_from_session
 from src.services.database_service import DatabaseService
 from src.services.expense_service import ExpenseService
-from src.auth import get_current_user_from_session
+from src.state import USERS
 from src.template_engine import templates
+
 from .common import get_group_or_404
 
 router = APIRouter()
@@ -17,15 +18,15 @@ async def create_group(request: Request, name: str = Form(...)):
     current_user = get_current_user_from_session(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required")
-        
+
     # Safely handle single or multiple checkboxes
     form = await request.form()
     member_ids = form.getlist("member_ids")
-    
+
     # Ensure the current user is included in the group
     if current_user.id not in member_ids:
         member_ids.append(current_user.id)
-    
+
     group = DatabaseService.create_group(name, member_ids)
     return RedirectResponse(f"/groups/{group.id}", status_code=303)
 
@@ -37,7 +38,9 @@ async def group_detail(request: Request, group_id: str):
     transactions = ExpenseService.simplify_balances(group.members)
     monthly = ExpenseService.compute_monthly_analysis(group)
     monthly_transactions = ExpenseService.compute_monthly_transactions(monthly)
-    expense_remaining = {e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses}
+    expense_remaining = {
+        e.id: ExpenseService.compute_expense_remaining(e, group) for e in group.expenses
+    }
     return templates.TemplateResponse(
         "group_detail.html",
         {

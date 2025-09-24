@@ -45,15 +45,6 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>
-        <form action="/logout" method="post" style="display: inline;">
-          <button type="submit" class="btn-logout" title="Sair">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-            Sair
-          </button>
-        </form>
-        <button type="button" class="compact-toggle" onclick="toggleCompactMode()" title="Alternar modo compacto" aria-label="Alternar modo compacto">Compacto</button>
       </div>
       {% else %}
       <!-- Dark Mode Toggle for non-logged users -->
@@ -66,13 +57,8 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
-      <button type="button" class="compact-toggle" onclick="toggleCompactMode()" title="Alternar modo compacto" aria-label="Alternar modo compacto">Compacto</button>
       {% endif %}
       
-      <div class="demo-badge hidden" style="display: flex;">
-        <div class="pulse-dot"></div>
-        <span>{{ t('navigation.demo_active') }}</span>
-      </div>
     </div>
   </nav>
 

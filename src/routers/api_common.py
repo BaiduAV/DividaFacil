@@ -1,4 +1,4 @@
-from fastapi import Request, HTTPException
+from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -10,10 +10,8 @@ async def api_http_exception_handler(request: Request, exc: StarletteHTTPExcepti
     return JSONResponse(
         status_code=exc.status_code,
         content=ErrorResponse(
-            error="HTTP Error",
-            detail=exc.detail,
-            status_code=exc.status_code
-        ).dict()
+            error="HTTP Error", detail=exc.detail, status_code=exc.status_code
+        ).dict(),
     )
 
 
@@ -21,9 +19,5 @@ async def api_validation_exception_handler(request: Request, exc: Exception):
     """Handle validation errors for API routes with JSON error responses."""
     return JSONResponse(
         status_code=400,
-        content=ErrorResponse(
-            error="Validation Error",
-            detail=str(exc),
-            status_code=400
-        ).dict()
+        content=ErrorResponse(error="Validation Error", detail=str(exc), status_code=400).dict(),
     )

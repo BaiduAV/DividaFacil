@@ -5,17 +5,17 @@ class UserRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
-    
-    @validator('password')
+
+    @validator("password")
     def password_length(cls, v):
         if len(v) < 6:
-            raise ValueError('Password must be at least 6 characters long')
+            raise ValueError("Password must be at least 6 characters long")
         return v
-    
-    @validator('name')
+
+    @validator("name")
     def name_not_empty(cls, v):
         if not v.strip():
-            raise ValueError('Name cannot be empty')
+            raise ValueError("Name cannot be empty")
         return v.strip()
 
 

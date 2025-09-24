@@ -1,7 +1,9 @@
+from typing import Dict, List
+
 from pydantic import BaseModel
-from typing import List, Dict
 
 from src.models.group import Group
+
 from .user import UserResponse
 
 
@@ -17,7 +19,7 @@ class GroupResponse(BaseModel):
 
     class Config:
         from_attributes = True
-    
+
     @classmethod
     def from_group(cls, group: Group) -> "GroupResponse":
         """Create GroupResponse from Group model."""
@@ -25,7 +27,6 @@ class GroupResponse(BaseModel):
             id=group.id,
             name=group.name,
             members={
-                user_id: UserResponse.from_user(user) 
-                for user_id, user in group.members.items()
-            }
+                user_id: UserResponse.from_user(user) for user_id, user in group.members.items()
+            },
         )

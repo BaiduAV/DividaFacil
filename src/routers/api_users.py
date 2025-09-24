@@ -1,11 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
-import uuid
+from fastapi import APIRouter, Depends, HTTPException
 
-from src.services.database_service import DatabaseService
+from src.auth import require_authentication
 from src.models.user import User
 from src.schemas.user import UserCreate, UserResponse
-from src.schemas.error import ErrorResponse
-from src.auth import get_current_user_from_session, require_authentication
+from src.services.database_service import DatabaseService
 
 router = APIRouter(prefix="/api", tags=["users"])
 
@@ -17,7 +15,7 @@ async def create_user_api(user_data: UserCreate):
     existing_user = DatabaseService.get_user_by_email(user_data.email)
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     # Create new user via repository (generates ID)
     created = DatabaseService.create_user(user_data.name, user_data.email)
     return UserResponse.from_user(created)
@@ -35,6 +33,8 @@ async def get_user_api(user_id: str, current_user: User = Depends(require_authen
     """Get a specific user via JSON API. Users can only access their own data."""
     # Users can only access their own user data
     if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied. You can only view your own user data.")
-    
+        raise HTTPException(
+            status_code=403, detail="Access denied. You can only view your own user data."
+        )
+
     return UserResponse.from_user(current_user)

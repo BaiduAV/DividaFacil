@@ -4,14 +4,14 @@ from decimal import Decimal
 from typing import Final
 
 # Expense calculation constants
-MIN_BALANCE_THRESHOLD: Final[Decimal] = Decimal('0.01')
+MIN_BALANCE_THRESHOLD: Final[Decimal] = Decimal("0.01")
 DECIMAL_PLACES: Final[int] = 2
-PERCENTAGE_BASE: Final[Decimal] = Decimal('100.0')
+PERCENTAGE_BASE: Final[Decimal] = Decimal("100.0")
 
 # Split type constants
-SPLIT_EQUAL: Final[str] = 'EQUAL'
-SPLIT_EXACT: Final[str] = 'EXACT'
-SPLIT_PERCENTAGE: Final[str] = 'PERCENTAGE'
+SPLIT_EQUAL: Final[str] = "EQUAL"
+SPLIT_EXACT: Final[str] = "EXACT"
+SPLIT_PERCENTAGE: Final[str] = "PERCENTAGE"
 
 # Application constants
 API_PREFIX: Final[str] = "/api/"

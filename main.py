@@ -3,25 +3,33 @@
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
-from rich.console import Console
-from rich.table import Table
-from rich.prompt import Prompt, Confirm
-from rich.panel import Panel
 
-from src.models.user import User
-from src.models.group import Group
-from src.models.expense import Expense
-from src.services.expense_service import ExpenseService, ExpenseCalculationError
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+from rich.table import Table
+
 from src.constants import (
-    SPLIT_EQUAL, SPLIT_EXACT, SPLIT_PERCENTAGE,
-    CLI_PROMPT_COLOR, CLI_ERROR_COLOR, CLI_SUCCESS_COLOR, CLI_WARNING_COLOR
+    CLI_ERROR_COLOR,
+    CLI_SUCCESS_COLOR,
+    CLI_WARNING_COLOR,
+    SPLIT_EQUAL,
+    SPLIT_EXACT,
+    SPLIT_PERCENTAGE,
 )
+from src.models.expense import Expense
+from src.models.group import Group
+from src.models.user import User
+from src.services.expense_service import ExpenseCalculationError, ExpenseService
 
 console = Console()
 
+
 class CLIError(Exception):
     """Base exception for CLI operations."""
+
     pass
+
 
 class MenuOption:
     """Represents a menu option with its handler."""
@@ -30,6 +38,7 @@ class MenuOption:
         self.label = label
         self.handler = handler
         self.requires_group = requires_group
+
 
 class SplitwiseApp:
     """Main CLI application for expense splitting."""
@@ -126,11 +135,11 @@ class SplitwiseApp:
             split_values = self._get_split_values(split_type, selected_users)
 
             return {
-                'amount': amount,
-                'description': description,
-                'split_type': split_type,
-                'selected_users': selected_users,
-                'split_values': split_values
+                "amount": amount,
+                "description": description,
+                "split_type": split_type,
+                "selected_users": selected_users,
+                "split_values": split_values,
             }
 
         except (ValueError, KeyError) as e:
@@ -146,11 +155,7 @@ class SplitwiseApp:
 
         split_choice = Prompt.ask("Choose split type", choices=["1", "2", "3"])
 
-        split_map = {
-            "1": SPLIT_EQUAL,
-            "2": SPLIT_EXACT,
-            "3": SPLIT_PERCENTAGE
-        }
+        split_map = {"1": SPLIT_EQUAL, "2": SPLIT_EXACT, "3": SPLIT_PERCENTAGE}
 
         return split_map.get(split_choice)
 
@@ -168,7 +173,7 @@ class SplitwiseApp:
         try:
             selected_indices = Prompt.ask(
                 "Select users to split with (comma-separated numbers)"
-            ).split(',')
+            ).split(",")
 
             return [users[int(i.strip()) - 1] for i in selected_indices]
         except (ValueError, IndexError):
@@ -223,15 +228,15 @@ class SplitwiseApp:
 
         expense = Expense(
             id=expense_id,
-            amount=expense_data['amount'],
-            description=expense_data['description'],
+            amount=expense_data["amount"],
+            description=expense_data["description"],
             paid_by=self.current_user.id,
-            split_among=[u.id for u in expense_data['selected_users']],
-            split_type=expense_data['split_type'],
-            split_values=expense_data['split_values'],
-            created_at=datetime.now()
+            split_among=[u.id for u in expense_data["selected_users"]],
+            split_type=expense_data["split_type"],
+            split_values=expense_data["split_values"],
+            created_at=datetime.now(),
         )
-        
+
         self.current_group.add_expense(expense)
         ExpenseService.calculate_balances(expense, self.current_group.members)
         self._show_success(f"Expense '{expense_data['description']}' added successfully!")
@@ -240,11 +245,11 @@ class SplitwiseApp:
         """Show balances for the current group."""
         if not self._validate_group_selected():
             return
-            
+
         table = Table(title=f"Balances for {self.current_group.name}")
         table.add_column("User", style="cyan")
         table.add_column("Net Balance", style="green")
-        
+
         has_balances = False
         for user in self.current_group.members.values():
             net_balance = sum(user.balance.values())
@@ -252,10 +257,7 @@ class SplitwiseApp:
                 has_balances = True
                 status = "owes" if net_balance < 0 else "is owed"
                 amount = abs(round(net_balance, 2))
-                table.add_row(
-                    user.name,
-                    f"{status} ${amount:.2f}"
-                )
+                table.add_row(user.name, f"{status} ${amount:.2f}")
 
         if has_balances:
             console.print(table)
@@ -266,7 +268,7 @@ class SplitwiseApp:
         """Show simplified transactions to settle up all balances."""
         if not self._validate_group_selected():
             return
-            
+
         try:
             transactions = ExpenseService.simplify_balances(self.current_group.members)
 
@@ -280,13 +282,9 @@ class SplitwiseApp:
             table.add_column("Amount", style="bold")
 
             for t in transactions:
-                from_user = self.users[t['from']].name
-                to_user = self.users[t['to']].name
-                table.add_row(
-                    from_user,
-                    to_user,
-                    f"${t['amount']:.2f}"
-                )
+                from_user = self.users[t["from"]].name
+                to_user = self.users[t["to"]].name
+                table.add_row(from_user, to_user, f"${t['amount']:.2f}")
 
             console.print(table)
 
@@ -352,10 +350,12 @@ class SplitwiseApp:
         if self.current_group:
             console.print(f"\n[dim]Current group: {self.current_group.name}[/dim]")
 
+
 def main():
     """Main entry point for the CLI application."""
     app = SplitwiseApp()
     app.run()
+
 
 if __name__ == "__main__":
     main()
