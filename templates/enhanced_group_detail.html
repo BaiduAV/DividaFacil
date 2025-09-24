@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Group Header -->
+<div class="group-header">
+  <div class="breadcrumb">
+    <a href="/" class="breadcrumb-link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Voltar ao Dashboard
+    </a>
+  </div>
+  
+  <div class="group-title">
+    <div class="group-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 15.75v-.3m12 3.27v-.188c0-1.121-.285-2.18-.786-3.104m0 0A5.987 5.987 0 0012 9.75a5.987 5.987 0 00-5.214 3.178m0 0a3 3 0 00-4.682 2.72 8.986 8.986 0 003.741.479"/>
+      </svg>
+    </div>
+    <div>
+      <h1>{{ group.name }}</h1>
+      <p>{{ group.members|length }} membros • {{ expenses|length if expenses else 0 }} despesas</p>
+    </div>
+  </div>
+  
+  <div class="group-actions">
+    <button class="btn-secondary" id="add-member-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2.25-6.75a3 3 0 11-6 0 3 3 0 016 0zM3 20.25v-.375A2.625 2.625 0 015.625 17.25h4.5A2.625 2.625 0 0112.75 19.875v.375"/>
+      </svg>
+      Adicionar Membro
+    </button>
+    
+    <button class="btn-primary" id="add-expense-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
+      </svg>
+      Nova Despesa
+    </button>
+  </div>
+</div>
+
+<!-- Group Stats -->
+<div class="group-stats">
+  <div class="stat-card">
+    <div class="stat-icon positive">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">R$ {{ "%.2f"|format(total_expenses or 0)|replace(".", ",") }}</span>
+      <span class="stat-label">Total Gasto</span>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon neutral">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">R$ {{ "%.2f"|format((total_expenses or 0) / (group.members|length) if group.members else 0)|replace(".", ",") }}</span>
+      <span class="stat-label">Por Pessoa</span>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon warning">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">{{ pending_settlements or 0 }}</span>
+      <span class="stat-label">Pendências</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="group-content-grid">
+  <!-- Left Column: Members and Balance Summary -->
+  <div class="group-sidebar">
+    <!-- Members Section -->
+    <div class="members-section">
+      <div class="section-header">
+        <div class="section-icon">
+          <div class="section-icon-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h2>Membros</h2>
+          <p>{{ group.members|length }} pessoas no grupo</p>
+        </div>
+      </div>
+      
+      <div class="members-list">
+        {% for member in group.members.values() %}
+        <div class="member-item">
+          <div class="member-avatar">{{ member.name[0].upper() }}</div>
+          <div class="member-info">
+            <span class="member-name">{{ member.name }}</span>
+            <span class="member-email">{{ member.email }}</span>
+          </div>
+          <div class="member-balance">
+            <!-- This would show the member's balance in the group -->
+            <span class="balance-amount neutral">R$ 0,00</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Balance Summary Component -->
+    {% include 'components/balance_summary.html' %}
+  </div>
+  
+  <!-- Right Column: Expenses -->
+  <div class="group-main">
+    <!-- Expense List Component -->
+    {% include 'components/expense_list.html' %}
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal" id="add-expense-modal">
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Nova Despesa</h3>
+      <button class="modal-close" id="close-modal">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <form class="expense-form" action="/groups/{{ group.id }}/expenses" method="post">
+      <div class="form-step active" data-step="1">
+        <h4>Informações Básicas</h4>
+        
+        <div class="form-grid">
+          <div class="input-group">
+            <label class="input-label">Descrição</label>
+            <input required name="description" placeholder="Ex: Jantar no restaurante" class="input-field">
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Valor</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix">R$</span>
+              <input required name="amount" type="text" placeholder="0,00" class="input-field" id="amount-input">
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label class="input-label">Data</label>
+            <input name="date" type="date" class="input-field" value="{{ today }}">
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-step" data-step="2">
+        <h4>Quem Pagou?</h4>
+        
+        <div class="payer-selection">
+          {% for member in group.members.values() %}
+          <label class="payer-option">
+            <input type="radio" name="paid_by" value="{{ member.id }}" required>
+            <div class="payer-card">
+              <div class="payer-avatar">{{ member.name[0].upper() }}</div>
+              <span class="payer-name">{{ member.name }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <div class="form-step" data-step="3">
+        <h4>Como Dividir?</h4>
+        
+        <div class="split-type-selection">
+          <label class="split-option">
+            <input type="radio" name="split_type" value="EQUAL" checked>
+            <div class="split-card">
+              <div class="split-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <span class="split-title">Divisão Igual</span>
+                <span class="split-description">Dividir igualmente entre todos</span>
+              </div>
+            </div>
+          </label>
+          
+          <label class="split-option">
+            <input type="radio" name="split_type" value="EXACT">
+            <div class="split-card">
+              <div class="split-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 15.75V18a.75.75 0 01-.75.75h-9a.75.75 0 01-.75-.75v-9a.75.75 0 01.75-.75h2.25m13.5-9l-13.5 13.5m0 0l6-6m-6 6l6.75-6.75"/>
+                </svg>
+              </div>
+              <div>
+                <span class="split-title">Valores Exatos</span>
+                <span class="split-description">Definir valor específico para cada pessoa</span>
+              </div>
+            </div>
+          </label>
+          
+          <label class="split-option">
+            <input type="radio" name="split_type" value="PERCENTAGE">
+            <div class="split-card">
+              <div class="split-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.228a25.628 25.628 0 012.916.52 6.003 6.003 0 00-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/>
+                </svg>
+              </div>
+              <div>
+                <span class="split-title">Por Percentual</span>
+                <span class="split-description">Definir percentual para cada pessoa</span>
+              </div>
+            </div>
+          </label>
+        </div>
+        
+        <div class="split-among-section">
+          <label class="input-label">Dividir entre:</label>
+          <div class="split-members">
+            {% for member in group.members.values() %}
+            <label class="member-checkbox">
+              <input type="checkbox" name="split_among" value="{{ member.id }}" checked>
+              <div class="member-option">
+                <div class="member-avatar">{{ member.name[0].upper() }}</div>
+                <span class="member-name">{{ member.name }}</span>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        
+        <div class="split-values-section hidden" id="split-values-section">
+          <label class="input-label">Valores por pessoa:</label>
+          <div class="split-values-grid">
+            {% for member in group.members.values() %}
+            <div class="split-value-item">
+              <div class="member-info">
+                <div class="member-avatar">{{ member.name[0].upper() }}</div>
+                <span class="member-name">{{ member.name }}</span>
+              </div>
+              <input type="number" name="value_{{ member.id }}" step="0.01" min="0" class="input-field split-value-input" placeholder="0,00">
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-step" data-step="4">
+        <h4>Revisão</h4>
+        
+        <div class="expense-review">
+          <div class="review-item">
+            <span class="review-label">Descrição:</span>
+            <span class="review-value" id="review-description">-</span>
+          </div>
+          
+          <div class="review-item">
+            <span class="review-label">Valor:</span>
+            <span class="review-value" id="review-amount">R$ 0,00</span>
+          </div>
+          
+          <div class="review-item">
+            <span class="review-label">Pago por:</span>
+            <span class="review-value" id="review-payer">-</span>
+          </div>
+          
+          <div class="review-item">
+            <span class="review-label">Tipo de divisão:</span>
+            <span class="review-value" id="review-split-type">-</span>
+          </div>
+          
+          <div class="review-item">
+            <span class="review-label">Dividir entre:</span>
+            <span class="review-value" id="review-split-among">-</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="prev-step">Anterior</button>
+        <button type="button" class="btn-primary" id="next-step">Próximo</button>
+        <button type="submit" class="btn-primary hidden" id="submit-expense">Criar Despesa</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal" id="add-member-modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Adicionar Membro</h3>
+      <button class="modal-close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <form action="/groups/{{ group.id }}/members" method="post">
+      <div class="form-grid">
+        <div class="input-group">
+          <label class="input-label">Selecionar usuário</label>
+          <select name="user_id" class="input-field" required>
+            <option value="">Escolha um usuário</option>
+            {% for user in available_users %}
+            <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary modal-close">Cancelar</button>
+        <button type="submit" class="btn-primary">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Modal functionality
+  const addExpenseBtn = document.getElementById('add-expense-btn');
+  const addMemberBtn = document.getElementById('add-member-btn');
+  const expenseModal = document.getElementById('add-expense-modal');
+  const memberModal = document.getElementById('add-member-modal');
+  const modalOverlay = document.getElementById('modal-overlay');
+  const closeButtons = document.querySelectorAll('.modal-close');
+  
+  // Open modals
+  addExpenseBtn?.addEventListener('click', () => {
+    expenseModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  });
+  
+  addMemberBtn?.addEventListener('click', () => {
+    memberModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  });
+  
+  // Close modals
+  closeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.remove('active');
+      });
+      document.body.style.overflow = '';
+    });
+  });
+  
+  modalOverlay?.addEventListener('click', () => {
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.classList.remove('active');
+    });
+    document.body.style.overflow = '';
+  });
+  
+  // Multi-step form functionality
+  let currentStep = 1;
+  const totalSteps = 4;
+  const nextBtn = document.getElementById('next-step');
+  const prevBtn = document.getElementById('prev-step');
+  const submitBtn = document.getElementById('submit-expense');
+  
+  function updateStep() {
+    // Hide all steps
+    document.querySelectorAll('.form-step').forEach(step => {
+      step.classList.remove('active');
+    });
+    
+    // Show current step
+    document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+    
+    // Update buttons
+    prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+    nextBtn.style.display = currentStep === totalSteps ? 'none' : 'block';
+    submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
+    
+    // Update review on last step
+    if (currentStep === totalSteps) {
+      updateReview();
+    }
+  }
+  
+  nextBtn?.addEventListener('click', () => {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      updateStep();
+    }
+  });
+  
+  prevBtn?.addEventListener('click', () => {
+    if (currentStep > 1) {
+      currentStep--;
+      updateStep();
+    }
+  });
+  
+  function updateReview() {
+    const description = document.querySelector('[name="description"]').value;
+    const amount = document.querySelector('[name="amount"]').value;
+    const payer = document.querySelector('[name="paid_by"]:checked');
+    const splitType = document.querySelector('[name="split_type"]:checked');
+    const splitAmong = document.querySelectorAll('[name="split_among"]:checked');
+    
+    document.getElementById('review-description').textContent = description || '-';
+    document.getElementById('review-amount').textContent = amount ? `R$ ${amount}` : 'R$ 0,00';
+    document.getElementById('review-payer').textContent = payer ? payer.closest('.payer-option').querySelector('.payer-name').textContent : '-';
+    
+    const splitTypeLabels = {
+      'EQUAL': 'Divisão Igual',
+      'EXACT': 'Valores Exatos',
+      'PERCENTAGE': 'Por Percentual'
+    };
+    document.getElementById('review-split-type').textContent = splitType ? splitTypeLabels[splitType.value] : '-';
+    
+    const splitAmongNames = Array.from(splitAmong).map(checkbox => 
+      checkbox.closest('.member-checkbox').querySelector('.member-name').textContent
+    );
+    document.getElementById('review-split-among').textContent = splitAmongNames.join(', ') || '-';
+  }
+  
+  // Split type change handler
+  document.querySelectorAll('[name="split_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const splitValuesSection = document.getElementById('split-values-section');
+      if (this.value === 'EXACT' || this.value === 'PERCENTAGE') {
+        splitValuesSection.classList.remove('hidden');
+      } else {
+        splitValuesSection.classList.add('hidden');
+      }
+    });
+  });
+  
+  // Amount formatting
+  const amountInput = document.getElementById('amount-input');
+  amountInput?.addEventListener('input', function() {
+    let value = this.value.replace(/\D/g, '');
+    if (value) {
+      value = (parseInt(value) / 100).toFixed(2);
+      this.value = value.replace('.', ',');
+    }
+  });
+  
+  // Initialize
+  updateStep();
+});
+</script>
+
+{% endblock %}

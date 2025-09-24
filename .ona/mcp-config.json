@@ -19,6 +19,16 @@
       "env": {
         "RENDER_API_KEY": "${exec:printenv RENDER_API_KEY}"
       }
+    },
+    "figma": {
+      "name": "figma",
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.figma.com/mcp"
+      ],
+      "disabled": true,
+      "timeout": 30
     }
   }
 }
