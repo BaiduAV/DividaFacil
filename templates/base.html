@@ -53,6 +53,7 @@
             Sair
           </button>
         </form>
+        <button type="button" class="compact-toggle" onclick="toggleCompactMode()" title="Alternar modo compacto" aria-label="Alternar modo compacto">Compacto</button>
       </div>
       {% else %}
       <!-- Dark Mode Toggle for non-logged users -->
@@ -65,6 +66,7 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
+      <button type="button" class="compact-toggle" onclick="toggleCompactMode()" title="Alternar modo compacto" aria-label="Alternar modo compacto">Compacto</button>
       {% endif %}
       
       <div class="demo-badge hidden" style="display: flex;">
@@ -116,6 +118,18 @@
       }
     }
     
+    function toggleCompactMode() {
+      const body = document.body;
+      const isCompact = body.classList.toggle('compact');
+      localStorage.setItem('compactMode', isCompact ? '1' : '0');
+    }
+
+    function initCompactMode() {
+      if (localStorage.getItem('compactMode') === '1') {
+        document.body.classList.add('compact');
+      }
+    }
+
     // Initialize theme on page load
     document.addEventListener('DOMContentLoaded', function() {
       const savedTheme = localStorage.getItem('theme') || 'light';
@@ -124,6 +138,7 @@
       
       document.documentElement.setAttribute('data-theme', initialTheme);
       updateThemeIcons(initialTheme);
+      initCompactMode();
     });
   </script>
 </body>

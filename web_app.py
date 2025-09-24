@@ -1,16 +1,16 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-import logging
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import logging
+from typing import Optional
 
 from src.services.database_service import DatabaseService
 from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
-from src.state import USERS, GROUPS
-from src.auth import get_current_user_from_session, login_user, logout_user
+from src.auth import get_current_user_from_session
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
@@ -19,158 +19,151 @@ from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_expenses import router as api_expenses_router
 from src.routers.api_auth import router as api_auth_router
-from src.services.expense_service import ExpenseService
+from src.routers.web_auth import router as web_auth_router  # added
 
-# App settings and logging
-settings = get_settings()
-app = FastAPI(title=settings.APP_NAME)
-configure_logging(settings.LOG_LEVEL)
+logger = logging.getLogger(__name__)
 
-# Add session middleware for authentication
-app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY, session_cookie="session_id")
+# Constants
+API_PREFIX = "/api/"
+SESSION_COOKIE_NAME = "session_id"
+HEALTH_CHECK_RESPONSE = {"status": "ok"}
 
-def create_app() -> FastAPI:
-    """Minimal application factory returning the configured FastAPI app.
+class AppFactory:
+    """Factory class for creating and configuring the FastAPI application."""
 
-    Keeps backward compatibility with tests that import `web_app.app` directly,
-    while allowing other entrypoints to call `create_app()`.
-    """
-    return app
+    def __init__(self):
+        self.settings = get_settings()
+        self._app: Optional[FastAPI] = None
 
-# Templates come from centralized template engine (with filters pre-registered)
+    def create_app(self) -> FastAPI:
+        """Create and configure the FastAPI application."""
+        if self._app is None:
+            self._app = self._build_app()
+        return self._app
 
-# Static files
-app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
+    def _build_app(self) -> FastAPI:
+        """Build the FastAPI application with all configurations."""
+        app = FastAPI(title=self.settings.APP_NAME)
 
-# Routers (preserve existing URLs)
-app.include_router(auth_router)
-app.include_router(users_router)
-app.include_router(groups_router)
-app.include_router(expenses_router)
+        # Configure logging
+        configure_logging(self.settings.LOG_LEVEL)
 
-# API routers with JSON responses
-app.include_router(api_users_router)
-app.include_router(api_groups_router)
-app.include_router(api_expenses_router)
-app.include_router(api_auth_router)
+        # Add middleware
+        self._add_middleware(app)
 
+        # Mount static files
+        self._mount_static_files(app)
 
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    # For API requests, return JSON error responses
-    if request.url.path.startswith("/api/"):
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"error": "HTTP Error", "detail": exc.detail}
-        )
-    
-    # Render 404 with template when appropriate
-    if exc.status_code == 404:
-        return templates.TemplateResponse(
-            "errors/404.html",
-            {"request": request},
-            status_code=404,
-        )
-    # Fallback to default behavior for other HTTP errors
-    raise exc
+        # Include routers
+        self._include_routers(app)
 
+        # Add exception handlers
+        self._add_exception_handlers(app)
 
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
-    logging.getLogger(__name__).exception("Unhandled server error")
-    return templates.TemplateResponse(
-        "errors/500.html",
-        {"request": request},
-        status_code=500,
-    )
+        # Add health check endpoint
+        self._add_health_check(app)
 
+        # Add dashboard route
+        self._add_dashboard_route(app)
 
-@app.get("/healthz")
-async def healthz():
-    return {"status": "ok"}
+        return app
 
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    """Show login page."""
-    try:
-        # Get users from database instead of state to avoid issues
-        users_dict = DatabaseService.get_all_users()
-        users_list = list(users_dict.values())
-
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "users": users_list}
-        )
-    except Exception as e:
-        # If there's an error loading users, show empty list with error
-        print(f"Error loading users for login page: {e}")
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "users": [], "error": "Error loading users"}
+    def _add_middleware(self, app: FastAPI) -> None:
+        """Add middleware to the application."""
+        app.add_middleware(
+            SessionMiddleware,
+            secret_key=self.settings.SESSION_SECRET_KEY,
+            session_cookie=SESSION_COOKIE_NAME
         )
 
-@app.post("/login")
-async def login(request: Request, email: str = Form(...)):
-    """Login user by setting session."""
-    try:
-        user = DatabaseService.get_user_by_email(email)
-        if not user:
-            # Get users for the dropdown again
-            users_dict = DatabaseService.get_all_users()
-            users_list = list(users_dict.values())
+    def _mount_static_files(self, app: FastAPI) -> None:
+        """Mount static files directory."""
+        app.mount("/static", StaticFiles(directory=self.settings.STATIC_DIR), name="static")
 
-            return templates.TemplateResponse(
-                "login.html",
-                {"request": request, "users": users_list, "error": "User not found"}
+    def _include_routers(self, app: FastAPI) -> None:
+        """Include all application routers."""
+        # Web routers
+        routers = [
+            web_auth_router,  # include web auth routes first
+            auth_router,
+            users_router,
+            groups_router,
+            expenses_router,
+        ]
+
+        # API routers
+        api_routers = [
+            api_users_router,
+            api_groups_router,
+            api_expenses_router,
+            api_auth_router,
+        ]
+
+        for router in routers:
+            app.include_router(router)
+
+        for router in api_routers:
+            app.include_router(router)
+
+    def _add_exception_handlers(self, app: FastAPI) -> None:
+        """Add exception handlers to the application."""
+
+        @app.exception_handler(StarletteHTTPException)
+        async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+            return await self._handle_http_exception(request, exc)
+
+        @app.exception_handler(Exception)
+        async def unhandled_exception_handler(request: Request, exc: Exception):
+            return await self._handle_unhandled_exception(request, exc)
+
+    async def _handle_http_exception(self, request: Request, exc: StarletteHTTPException) -> JSONResponse | HTMLResponse:
+        """Handle HTTP exceptions with appropriate response format."""
+        # For API requests, return JSON error responses
+        if request.url.path.startswith(API_PREFIX):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"error": "HTTP Error", "detail": exc.detail}
             )
 
-        login_user(request, user)
-        return RedirectResponse("/", status_code=303)
-    except Exception as e:
-        print(f"Login error: {e}")
+        # Render 404 with template when appropriate
+        if exc.status_code == 404:
+            return templates.TemplateResponse(
+                "errors/404.html",
+                {"request": request},
+                status_code=404,
+            )
+
+        # Fallback to default behavior for other HTTP errors
+        raise exc
+
+    async def _handle_unhandled_exception(self, request: Request, exc: Exception) -> HTMLResponse:
+        """Handle unhandled exceptions."""
+        logger.exception("Unhandled server error")
         return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "users": [], "error": f"Login failed: {str(e)}"}
+            "errors/500.html",
+            {"request": request},
+            status_code=500,
         )
 
-@app.post("/logout")
-async def logout(request: Request):
-    """Logout current user."""
-    logout_user(request)
-    return RedirectResponse("/login", status_code=303)
+    def _add_health_check(self, app: FastAPI) -> None:
+        """Add health check endpoint."""
+        @app.get("/healthz")
+        async def healthz():
+            return HEALTH_CHECK_RESPONSE
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    # Check if user is authenticated
-    current_user = get_current_user_from_session(request)
-    if not current_user:
-        return RedirectResponse("/login", status_code=303)
-    
-    # Get user's groups and expenses
-    user_groups = []
-    user_expenses = []
-    
-    # Get all groups where the user is a member
-    for group in GROUPS.values():
-        if current_user.id in group.members:
-            ExpenseService.recompute_group_balances(group)
-            user_groups.append(group)
-            # Get expenses created by this user, or fallback to paid_by for legacy data
-            user_expenses.extend([
-                exp for exp in group.expenses 
-                if (exp.created_by == current_user.id) or 
-                   (exp.created_by is None and exp.paid_by == current_user.id)
-            ])
-    
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "users": list(USERS.values()),
-            "groups": user_groups,
-            "user_expenses": user_expenses,
-            "total_expenses": len(user_expenses),
-            "is_authenticated": True,
-        },
-    )
+    def _add_dashboard_route(self, app: FastAPI) -> None:
+        """Add dashboard route."""
+        from src.services.dashboard_service import DashboardService
+
+        @app.get("/", response_class=HTMLResponse)
+        async def dashboard(request: Request):
+            return await DashboardService.render_dashboard(request)
+
+
+# Create application instance
+app_factory = AppFactory()
+app = app_factory.create_app()
+
+def create_app() -> FastAPI:
+    """Application factory function for backward compatibility."""
+    return app_factory.create_app()

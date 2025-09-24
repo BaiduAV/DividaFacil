@@ -1,78 +1,59 @@
 {% extends 'base.html' %}
 {% block content %}
-<!-- Hero Section -->
-<div class="hero" style="margin-bottom: 2rem;">
+<div class="hero">
   <div class="hero-badge">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-    </svg>
-    <a href="/" style="color: inherit; text-decoration: none;">Voltar ao Painel</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+    <a href="/" aria-label="Voltar ao painel">Voltar ao Painel</a>
   </div>
-  
-  <h1>
-    Grupo: <span class="gradient-text">{{ group.name }}</span>
-  </h1>
-  <p>
-    Gerencie membros, despesas e visualize saldos do grupo
-  </p>
+  <h1>Grupo: <span class="gradient-text">{{ group.name }}</span></h1>
+  <p>Gerencie membros, despesas e visualize saldos do grupo</p>
 </div>
 
 {% if error %}
-  <div style="margin-bottom: 2rem; background: rgba(254, 242, 242, 0.9); backdrop-filter: blur(16px); padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(254, 202, 202, 0.6); color: #dc2626; display: flex; align-items: flex-start; gap: 0.75rem;" role="alert" aria-live="polite">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-top: 0.125rem; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+  <div class="alert alert--error" role="alert" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
     <span>{{ error }}</span>
   </div>
 {% endif %}
 {% if success %}
-  <div style="margin-bottom: 2rem; background: rgba(240, 253, 244, 0.9); backdrop-filter: blur(16px); padding: 1rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(167, 243, 208, 0.6); color: #059669; display: flex; align-items: flex-start; gap: 0.75rem;" role="status" aria-live="polite">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; margin-top: 0.125rem; flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
+  <div class="alert alert--success" role="status" aria-live="polite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
     <span>{{ success }}</span>
   </div>
 {% endif %}
 
-<div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+<div class="group-grid">
   <!-- Members Section -->
   <section class="section">
     <div class="section-header">
-      <div class="section-icon">
-        <div class="section-icon-inner" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <h2>Membros do Grupo</h2>
-        <p>Gerencie quem faz parte deste grupo</p>
-      </div>
+      <div class="section-icon"><div class="section-icon-inner gradient-cyan">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
+      </div></div>
+      <div><h2>Membros do Grupo</h2><p>Gerencie quem faz parte deste grupo</p></div>
     </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="member-list">
       {% for m in group.members.values() %}
       <div class="card">
         <div class="card-content">
-          <div class="avatar">{{ m.name[0].upper() }}</div>
-          <div style="flex: 1;">
-            <h3>{{ m.name }}</h3>
-            <p>{{ m.email }}</p>
-          </div>
+            <div class="avatar gradient-primary"><span style="font-size:.75rem; font-weight:700; color:white;">{{ m.name[0].upper() }}</span></div>
+            <div class="flex-1">
+              <h3>{{ m.name }}</h3>
+              <p class="caption">{{ m.email }}</p>
+            </div>
         </div>
       </div>
       {% else %}
       <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:2rem; height:2rem; color:white;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
-          </svg>
+        <div class="empty-state-icon gradient-cyan">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
         </div>
         <h3>Nenhum membro ainda</h3>
         <p>Adicione pessoas ao grupo para começar</p>
       </div>
       {% endfor %}
 
-      <!-- Add Member Form -->
       {% if all_users %}
-      <form action="/groups/{{ group.id }}/members" method="post" target="_self" class="form-card">
+      <form action="/groups/{{ group.id }}/members" method="post" class="form-card">
         <div class="input-group">
           <label class="input-label">Adicionar novo membro</label>
           <select required name="user_id" class="input-field" aria-label="Selecionar usuário para adicionar ao grupo" title="Selecionar usuário para adicionar ao grupo">
@@ -84,11 +65,9 @@
             {% endfor %}
           </select>
         </div>
-        <div style="display: flex; justify-content: flex-end; padding-top: 0.5rem;">
-          <button class="btn-primary" aria-label="Adicionar membro" title="Adicionar membro">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
-            </svg>
+        <div class="actions-row">
+          <button class="btn-primary btn--sm" aria-label="Adicionar membro" title="Adicionar membro">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
             Adicionar Membro
           </button>
         </div>
@@ -97,22 +76,14 @@
     </div>
   </section>
 
-  <!-- Expenses Section -->
+  <!-- Add Expense Section -->
   <section class="section">
     <div class="section-header">
-      <div class="section-icon">
-        <div class="section-icon-inner" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M21 3v1.5M3 6h18M5.25 9h13.5a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118.75 20.25H5.25A2.25 2.25 0 013 18v-6.75A2.25 2.25 0 715.25 9z"/>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <h2>Adicionar Despesa</h2>
-        <p>Registre uma nova despesa para o grupo</p>
-      </div>
+      <div class="section-icon"><div class="section-icon-inner gradient-green">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M21 3v1.5M3 6h18M5.25 9h13.5a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118.75 20.25H5.25A2.25 2.25 0 013 18v-6.75A2.25 2.25 0 015.25 9z"/></svg>
+      </div></div>
+      <div><h2>Adicionar Despesa</h2><p>Registre uma nova despesa para o grupo</p></div>
     </div>
-
     <form action="/groups/{{ group.id }}/expenses" method="post" class="form-card" id="expense-form">
       <div class="form-grid">
         <div class="input-group">
@@ -134,7 +105,6 @@
           </select>
         </div>
       </div>
-
       <div class="form-grid">
         <div class="input-group">
           <label class="input-label">Tipo de divisão</label>
@@ -150,26 +120,24 @@
         </div>
         <div class="input-group">
           <label class="input-label">Primeiro vencimento</label>
-          <input type="date" name="first_due_date" class="input-field" aria-label="Primeiro vencimento" title="Primeiro vencimento">
+            <input type="date" name="first_due_date" class="input-field" aria-label="Primeiro vencimento" title="Primeiro vencimento">
         </div>
       </div>
-
       <div class="input-group">
         <label class="input-label">Dividir entre</label>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+        <div class="split-among-grid">
           {% for m in group.members.values() %}
-          <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.8); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4); cursor: pointer;">
-            <input type="checkbox" name="split_among" value="{{ m.id }}" checked style="width: 1rem; height: 1rem; accent-color: #06b6d4;">
-            <div class="avatar" style="width: 1.5rem; height: 1.5rem; font-size: 0.75rem;">{{ m.name[0].upper() }}</div>
-            <span style="font-size: 0.875rem; font-weight: 600;">{{ m.name }}</span>
+          <label class="split-among-option">
+            <input type="checkbox" name="split_among" value="{{ m.id }}" checked>
+            <div class="avatar" style="width:1.75rem; height:1.75rem; font-size:.7rem; background:var(--gradient-primary); color:white; font-weight:700;">{{ m.name[0].upper() }}</div>
+            <span>{{ m.name }}</span>
           </label>
           {% endfor %}
         </div>
       </div>
-
-      <div id="split-values" class="hidden" style="margin-top: 1rem;">
-        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;">Valores por usuário</p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+      <div id="split-values" class="hidden split-values">
+        <p class="caption" style="margin-bottom: var(--space-4);">Valores por usuário</p>
+        <div class="split-among-grid">
           {% for m in group.members.values() %}
           <div class="input-group">
             <label class="input-label">{{ m.name }}</label>
@@ -178,86 +146,51 @@
           {% endfor %}
         </div>
       </div>
-
-      <div style="display: flex; justify-content: flex-end; padding-top: 1rem;">
+      <div class="actions-row" style="padding-top: var(--space-4);">
         <button class="btn-primary" aria-label="Adicionar despesa" title="Adicionar despesa">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           Adicionar Despesa
         </button>
       </div>
     </form>
-
     <script>
       const splitType = document.getElementById('split_type');
       const splitValues = document.getElementById('split-values');
       const amountDisplay = document.getElementById('amount_display');
       const amountHidden = document.getElementById('amount');
-
       const normalizeAmountBR = (val) => {
         if (!val) return '';
-        let v = ('' + val).trim();
-        v = v.replace(/\s+/g, '');
-        v = v.replace(/\./g, '');
-        v = v.replace(/,/g, '.');
-        const num = parseFloat(v);
-        if (isNaN(num)) return '';
-        return num.toFixed(2);
+        let v = ('' + val).trim().replace(/\s+/g,'').replace(/\./g,'').replace(/,/g,'.');
+        const num = parseFloat(v); return isNaN(num) ? '' : num.toFixed(2);
       };
-
-      const syncAmount = () => {
-        amountHidden.value = normalizeAmountBR(amountDisplay.value);
-      };
-
-      if (amountDisplay) {
-        syncAmount();
-        amountDisplay.addEventListener('input', syncAmount);
-      }
-
-      const toggleSplit = () => {
-        if (splitType.value === 'EXACT' || splitType.value === 'PERCENTAGE') {
-          splitValues.classList.remove('hidden');
-        } else {
-          splitValues.classList.add('hidden');
-        }
-      };
-
-      splitType.addEventListener('change', toggleSplit);
-      toggleSplit();
+      const syncAmount = () => { amountHidden.value = normalizeAmountBR(amountDisplay.value); };
+      if (amountDisplay) { syncAmount(); amountDisplay.addEventListener('input', syncAmount); }
+      const toggleSplit = () => { (splitType.value === 'EXACT' || splitType.value === 'PERCENTAGE') ? splitValues.classList.remove('hidden') : splitValues.classList.add('hidden'); };
+      splitType.addEventListener('change', toggleSplit); toggleSplit();
     </script>
   </section>
 
-  <!-- Existing Expenses -->
   {% if group.expenses %}
   <section class="section">
     <div class="section-header">
-      <div class="section-icon">
-        <div class="section-icon-inner" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 7.5h18M10.5 12h10.5M10.5 16.5H21M10.5 21H21"/>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <h2>Despesas do Grupo</h2>
-        <p>Histórico de despesas registradas</p>
-      </div>
+      <div class="section-icon"><div class="section-icon-inner gradient-violet">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 7.5h18M10.5 12h10.5M10.5 16.5H21M10.5 21H21"/></svg>
+      </div></div>
+      <div><h2>Despesas do Grupo</h2><p>Histórico de despesas registradas</p></div>
     </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="expense-list">
       {% for e in group.expenses %}
       <div class="card">
         <div class="card-content">
-          <div>
+          <div class="flex-1">
             <h3>{{ e.description }}</h3>
-            <p>{{ e.amount|brl }} · Pago por {{ group.members[e.paid_by].name }}</p>
+            <p class="caption">{{ e.amount|brl }} · Pago por {{ group.members[e.paid_by].name }}</p>
             {% if e.installments_count > 1 %}
-            <p style="font-size: 0.75rem; color: #64748b;">{{ e.installments_count }} parcelas</p>
+              <p class="caption">{{ e.installments_count }} parcelas</p>
             {% endif %}
           </div>
-          <div style="text-align: right;">
-            <span style="font-size: 0.75rem; color: #64748b;">{{ e.created_at.strftime('%d/%m/%Y') }}</span>
+          <div style="text-align:right;">
+            <span class="caption">{{ e.created_at.strftime('%d/%m/%Y') }}</span>
           </div>
         </div>
       </div>
@@ -266,24 +199,15 @@
   </section>
   {% endif %}
 
-  <!-- Balance Summary -->
   {% if group.members %}
   <section class="section">
     <div class="section-header">
-      <div class="section-icon">
-        <div class="section-icon-inner" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 10.5v9.75A1.5 1.5 0 006 21.75h12a1.5 1.5 0 001.5-1.5v-9.75"/>
-          </svg>
-        </div>
-      </div>
-      <div>
-        <h2>Saldos do Grupo</h2>
-        <p>Resumo de quem deve para quem</p>
-      </div>
+      <div class="section-icon"><div class="section-icon-inner gradient-amber">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 10.5v9.75A1.5 1.5 0 006 21.75h12a1.5 1.5 0 001.5-1.5v-9.75"/></svg>
+      </div></div>
+      <div><h2>Saldos do Grupo</h2><p>Resumo de quem deve para quem</p></div>
     </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="balance-list">
       {% for u in group.members.values() %}
         {% set net = 0 %}
         {% for amt in u.balance.values() %}
@@ -292,13 +216,13 @@
         {% if net != 0 %}
         <div class="card">
           <div class="card-content">
-            <div class="avatar">{{ u.name[0].upper() }}</div>
-            <div style="flex: 1;">
+            <div class="avatar gradient-primary"><span style="font-size:.75rem; font-weight:700; color:white;">{{ u.name[0].upper() }}</span></div>
+            <div class="flex-1">
               <h3>{{ u.name }}</h3>
               {% if net < 0 %}
-                <p style="color: #dc2626;">Deve {{ (-net)|brl }}</p>
+                <p class="text-negative">Deve {{ (-net)|brl }}</p>
               {% else %}
-                <p style="color: #059669;">Recebe {{ net|brl }}</p>
+                <p class="text-positive">Recebe {{ net|brl }}</p>
               {% endif %}
             </div>
           </div>
@@ -306,10 +230,8 @@
         {% endif %}
       {% else %}
       <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:2rem; height:2rem; color:white;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12"/>
-          </svg>
+        <div class="empty-state-icon gradient-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12"/></svg>
         </div>
         <h3>Tudo acertado!</h3>
         <p>Não há saldos pendentes no grupo</p>

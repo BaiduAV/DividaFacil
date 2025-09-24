@@ -12,20 +12,21 @@ if str(ROOT) not in sys.path:
 
 import web_app
 from src.database import engine, Base
+from src.state import USERS, GROUPS  # Import from the correct module
 
 
 @pytest.fixture(autouse=True)
 def reset_state():
     # Clear in-memory storages before each test
-    web_app.USERS.clear()
-    web_app.GROUPS.clear()
+    USERS.clear()
+    GROUPS.clear()
     # Clear database tables
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     # Clean up after test
-    web_app.USERS.clear()
-    web_app.GROUPS.clear()
+    USERS.clear()
+    GROUPS.clear()
 
 
 @pytest.fixture()
@@ -39,8 +40,8 @@ def authenticated_client(client):
     # Create a test user
     resp = client.post("/users", data={"name": "Test User", "email": "test@example.com"})
     
-    # Get the created user
-    users = list(web_app.USERS.values())
+    # Get the created user from the correct import
+    users = list(USERS.values())
     if users:
         # Login the user
         resp = client.post("/login", data={"user_id": users[0].id})

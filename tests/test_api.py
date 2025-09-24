@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 import web_app
+from src.state import USERS, GROUPS  # Import from correct module
 
 
 def test_add_user_and_group_flow(client: TestClient):
@@ -13,13 +14,13 @@ def test_add_user_and_group_flow(client: TestClient):
     assert resp.status_code in (303, 307)
 
     # Create group with both users
-    users = list(web_app.USERS.values())
+    users = list(USERS.values())
     data = {"name": "Viagem", "member_ids": [u.id for u in users]}
     resp = client.post("/groups", data=data, follow_redirects=False)
     assert resp.status_code in (303, 307)
 
     # Open the created group
-    group_id = list(web_app.GROUPS.keys())[0]
+    group_id = list(GROUPS.keys())[0]
     resp = client.get(f"/groups/{group_id}")
     assert resp.status_code == 200
 
@@ -28,9 +29,9 @@ def test_add_expense_with_comma_exact_and_percentage(authenticated_client: TestC
     client = authenticated_client
     # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
-    users = list(web_app.USERS.values())
+    users = list(USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
-    gid = list(web_app.GROUPS.keys())[0]
+    gid = list(GROUPS.keys())[0]
 
     # EXACT with comma values
     data = {
@@ -64,9 +65,9 @@ def test_installments_balance_recompute(authenticated_client: TestClient):
     client = authenticated_client
     # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
-    users = list(web_app.USERS.values())
+    users = list(USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
-    gid = list(web_app.GROUPS.keys())[0]
+    gid = list(GROUPS.keys())[0]
 
     # Add installment expense 3x 300, equal split
     data = {
@@ -102,9 +103,9 @@ def test_percentage_boundary_api_pass_and_fail(authenticated_client: TestClient)
     client = authenticated_client
     # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
-    users = list(web_app.USERS.values())
+    users = list(USERS.values())
     client.post("/groups", data={"name": "G", "member_ids": [u.id for u in users]})
-    gid = list(web_app.GROUPS.keys())[0]
+    gid = list(GROUPS.keys())[0]
 
     # 100.01 -> should PASS (tolerance is > 0.01 to fail)
     data_ok = {
@@ -138,9 +139,9 @@ def test_invalid_split_value_format_returns_400(authenticated_client: TestClient
     client = authenticated_client
     # Setup: another user and a group
     client.post("/users", data={"name": "Beto", "email": "beto@example.com"})
-    users = list(web_app.USERS.values())
+    users = list(USERS.values())
     client.post("/groups", data={"name": "G2", "member_ids": [u.id for u in users]})
-    gid = list(web_app.GROUPS.keys())[0]
+    gid = list(GROUPS.keys())[0]
 
     data = {
         "description": "Bad value",
