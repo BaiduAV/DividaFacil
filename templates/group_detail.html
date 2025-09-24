@@ -30,206 +30,161 @@
   </div>
 {% endif %}
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <!-- Left column: Members and Add Member -->
-  <section class="lg:col-span-1 space-y-4">
-    <div class="card">
-      <h2 style="font-weight: 900; color: #1e293b; font-size: 1.125rem; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: #0ea5e9;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/></svg>
-        Membros
-      </h2>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        {% for m in group.members.values() %}
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.6); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4);">
-          <div class="avatar" style="width: 2rem; height: 2rem; font-size: 0.875rem;">
-            {{ m.name[0].upper() }}
-          </div>
-          <div style="flex: 1;">
-            <div style="font-weight: 600; color: #374151; font-size: 0.875rem;">{{ m.name }}</div>
-            <div style="color: #64748b; font-size: 0.75rem;">{{ m.email }}</div>
-          </div>
+<div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+  <!-- Members Section -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon">
+        <div class="section-icon-inner" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
+          </svg>
         </div>
-        {% else %}
-        <div style="text-align: center; padding: 1.5rem; color: #64748b;">
-          <div style="font-weight: 600; margin-bottom: 0.25rem;">Nenhum membro ainda</div>
-          <div style="font-size: 0.875rem;">Adicione pessoas ao grupo</div>
-        </div>
-        {% endfor %}
+      </div>
+      <div>
+        <h2>Membros do Grupo</h2>
+        <p>Gerencie quem faz parte deste grupo</p>
       </div>
     </div>
-    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-      <h3 class="font-semibold mb-2 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2.25-6.75a3 3 0 11-6 0 3 3 0 016 0zM3 20.25v-.375A2.625 2.625 0 015.625 17.25h4.5A2.625 2.625 0 0112.75 19.875v.375"/></svg>
-        Adicionar membro
-      </h3>
-      <form action="/groups/{{ group.id }}/members" method="post" target="_self" class="space-y-2">
-        <select name="user_id" class="border rounded px-3 py-2 w-full" aria-label="Selecionar usuário para adicionar ao grupo" title="Selecionar usuário para adicionar ao grupo">
-          {% for u in all_users %}
-            {% if u.id not in group.members %}
-            <option value="{{ u.id }}">{{ u.name }} ({{ u.email }})</option>
-            {% endif %}
-          {% endfor %}
-        </select>
-        <button class="bg-emerald-600 text-white px-3 py-2 rounded w-full inline-flex items-center justify-center gap-2 hover:bg-emerald-700 transition" aria-label="Adicionar membro" title="Adicionar membro">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Adicionar
-        </button>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for m in group.members.values() %}
+      <div class="card">
+        <div class="card-content">
+          <div class="avatar">{{ m.name[0].upper() }}</div>
+          <div style="flex: 1;">
+            <h3>{{ m.name }}</h3>
+            <p>{{ m.email }}</p>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:2rem; height:2rem; color:white;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 717.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.215-.584-7.499-1.632z"/>
+          </svg>
+        </div>
+        <h3>Nenhum membro ainda</h3>
+        <p>Adicione pessoas ao grupo para começar</p>
+      </div>
+      {% endfor %}
+
+      <!-- Add Member Form -->
+      {% if all_users %}
+      <form action="/groups/{{ group.id }}/members" method="post" target="_self" class="form-card">
+        <div class="input-group">
+          <label class="input-label">Adicionar novo membro</label>
+          <select required name="user_id" class="input-field" aria-label="Selecionar usuário para adicionar ao grupo" title="Selecionar usuário para adicionar ao grupo">
+            <option value="">-- Escolha um usuário --</option>
+            {% for u in all_users %}
+              {% if u.id not in group.members %}
+              <option value="{{ u.id }}">{{ u.name }} ({{ u.email }})</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; padding-top: 0.5rem;">
+          <button class="btn-primary" aria-label="Adicionar membro" title="Adicionar membro">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+            Adicionar Membro
+          </button>
+        </div>
       </form>
+      {% endif %}
     </div>
   </section>
 
-  <!-- Expand/collapse behavior for expenses -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const buttons = Array.from(document.querySelectorAll('[data-toggle-expense]'));
-      const expKey = `sw:g:{{ group.id }}:expandedExpense`;
-      buttons.forEach(btn => {
-        const id = btn.getAttribute('data-toggle-expense');
-        const panel = document.getElementById(`exp-panel-${id}`);
-        const icon = btn.querySelector('svg');
-        btn.addEventListener('click', () => {
-          // Close others
-          buttons.forEach(b => {
-            const otherId = b.getAttribute('data-toggle-expense');
-            if (otherId !== id) {
-              const p = document.getElementById(`exp-panel-${otherId}`);
-              const ic = b.querySelector('svg');
-              p.classList.add('hidden');
-              b.setAttribute('aria-expanded', 'false');
-              ic.style.transform = 'rotate(0deg)';
-            }
-          });
-          // Toggle this one
-          panel.classList.toggle('hidden');
-          const expanded = panel.classList.contains('hidden') ? 'false' : 'true';
-          btn.setAttribute('aria-expanded', expanded);
-          icon.style.transform = expanded === 'true' ? 'rotate(180deg)' : 'rotate(0deg)';
-          try {
-            if (expanded === 'true') localStorage.setItem(expKey, id); else localStorage.removeItem(expKey);
-          } catch {}
-        });
-      });
-
-      // Restore last expanded expense, if any
-      try {
-        const saved = localStorage.getItem(expKey);
-        if (saved) {
-          const btn = document.querySelector(`[data-toggle-expense="${saved}"]`);
-          const panel = document.getElementById(`exp-panel-${saved}`);
-          const icon = btn && btn.querySelector('svg');
-          if (btn && panel && icon) {
-            panel.classList.remove('hidden');
-            btn.setAttribute('aria-expanded', 'true');
-            icon.style.transform = 'rotate(180deg)';
-          }
-        }
-      } catch {}
-
-      // Toggle split inputs visibility per expense when split_type changes
-      const splitSelects = Array.from(document.querySelectorAll('[data-edit-split-type]'));
-      splitSelects.forEach(sel => {
-        const id = sel.getAttribute('data-edit-split-type');
-        const panel = document.getElementById(`edit-split-${id}`);
-        const hintExact = document.querySelector(`[data-hint-exact="${id}"]`);
-        const hintPct = document.querySelector(`[data-hint-percentage="${id}"]`);
-        const pctSuffixes = Array.from(document.querySelectorAll(`[data-percentage-suffix="${id}"]`));
-        const apply = () => {
-          const val = sel.value;
-          if (!panel) return;
-          if (val === 'EQUAL') {
-            panel.classList.add('hidden');
-          } else {
-            panel.classList.remove('hidden');
-          }
-          if (hintExact) hintExact.classList.toggle('hidden', val !== 'EXACT');
-          if (hintPct) hintPct.classList.toggle('hidden', val !== 'PERCENTAGE');
-          pctSuffixes.forEach(s => s.classList.toggle('hidden', val !== 'PERCENTAGE'));
-        };
-        sel.addEventListener('change', apply);
-        apply();
-      });
-    });
-  </script>
-
-  <!-- Middle column: Add Expense -->
-  <section class="lg:col-span-2 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-    <h2 class="font-semibold mb-3 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M21 3v1.5M3 6h18M5.25 9h13.5a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118.75 20.25H5.25A2.25 2.25 0 013 18v-6.75A2.25 2.25 0 015.25 9z"/></svg>
-      Adicionar despesa
-    </h2>
-    <form action="/groups/{{ group.id }}/expenses" method="post" class="space-y-3" id="expense-form" aria-describedby="pct-total-hint">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <input required name="description" placeholder="Descrição" class="border rounded px-3 h-10" aria-label="Descrição da despesa" title="Descrição da despesa">
-        <div>
-          <div class="relative">
-            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-sm">R$</span>
-            <input id="amount_display" required inputmode="decimal" placeholder="Valor" class="border rounded pl-10 pr-3 h-10 w-full" aria-label="Valor da despesa" aria-describedby="amount-hint" title="Use vírgula para centavos (ex.: 123,45)">
-            <input type="hidden" name="amount" id="amount">
-          </div>
-          <p id="amount-hint" class="text-xs text-slate-400 mt-1">Use vírgula para centavos (ex.: 123,45)</p>
+  <!-- Expenses Section -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon">
+        <div class="section-icon-inner" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M21 3v1.5M3 6h18M5.25 9h13.5a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118.75 20.25H5.25A2.25 2.25 0 013 18v-6.75A2.25 2.25 0 715.25 9z"/>
+          </svg>
         </div>
-        <select required name="paid_by" class="border rounded px-3 py-2.5" aria-label="Quem pagou" title="Quem pagou">
-          <option value="" disabled selected>Pago por</option>
-          {% for m in group.members.values() %}
-          <option value="{{ m.id }}">{{ m.name }}</option>
-          {% endfor %}
-        </select>
       </div>
+      <div>
+        <h2>Adicionar Despesa</h2>
+        <p>Registre uma nova despesa para o grupo</p>
+      </div>
+    </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label class="block text-sm text-slate-600 mb-1">Tipo de divisão</label>
-          <select name="split_type" id="split_type" class="border rounded px-3 py-2.5 w-full" aria-label="Tipo de divisão" title="Tipo de divisão">
-            <option value="EQUAL">Igual</option>
-            <option value="EXACT">Valores exatos</option>
-            <option value="PERCENTAGE">Percentuais</option>
+    <form action="/groups/{{ group.id }}/expenses" method="post" class="form-card" id="expense-form">
+      <div class="form-grid">
+        <div class="input-group">
+          <label class="input-label">Descrição</label>
+          <input required name="description" placeholder="Ex: Jantar no restaurante" class="input-field" aria-label="Descrição da despesa" title="Descrição da despesa">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Valor (R$)</label>
+          <input id="amount_display" required inputmode="decimal" placeholder="0,00" class="input-field" aria-label="Valor da despesa" title="Use vírgula para centavos (ex.: 123,45)">
+          <input type="hidden" name="amount" id="amount">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Pago por</label>
+          <select required name="paid_by" class="input-field" aria-label="Quem pagou" title="Quem pagou">
+            <option value="">-- Quem pagou --</option>
+            {% for m in group.members.values() %}
+            <option value="{{ m.id }}">{{ m.name }}</option>
+            {% endfor %}
           </select>
         </div>
+      </div>
 
-        <div>
-          <label class="block text-sm text-slate-600 mb-1">Parcelas</label>
-          <input type="number" min="1" value="1" name="installments_count" class="border rounded px-3 py-2.5 w-full" aria-label="Número de parcelas" title="Número de parcelas">
+      <div class="form-grid">
+        <div class="input-group">
+          <label class="input-label">Tipo de divisão</label>
+          <select name="split_type" id="split_type" class="input-field" aria-label="Tipo de divisão" title="Tipo de divisão">
+            <option value="EQUAL">Dividir igualmente</option>
+            <option value="EXACT">Valores exatos</option>
+            <option value="PERCENTAGE">Por percentual</option>
+          </select>
         </div>
-
-        <div>
-          <label class="block text-sm text-slate-600 mb-1">Primeiro vencimento</label>
-          <input type="date" name="first_due_date" class="border rounded px-3 py-2.5 w-full" aria-label="Primeiro vencimento" title="Primeiro vencimento">
+        <div class="input-group">
+          <label class="input-label">Parcelas</label>
+          <input type="number" min="1" value="1" name="installments_count" class="input-field" aria-label="Número de parcelas" title="Número de parcelas">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Primeiro vencimento</label>
+          <input type="date" name="first_due_date" class="input-field" aria-label="Primeiro vencimento" title="Primeiro vencimento">
         </div>
       </div>
 
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">Dividir entre</label>
-        <div class="flex flex-wrap gap-2">
+      <div class="input-group">
+        <label class="input-label">Dividir entre</label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
           {% for m in group.members.values() %}
-          <label class="inline-flex items-center gap-2 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-            <input type="checkbox" name="split_among" value="{{ m.id }}" checked aria-label="Incluir {{ m.name }} na divisão" title="Incluir {{ m.name }} na divisão">
-            <span class="text-sm">{{ m.name }}</span>
+          <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.8); border-radius: 0.75rem; border: 1px solid rgba(148, 163, 184, 0.4); cursor: pointer;">
+            <input type="checkbox" name="split_among" value="{{ m.id }}" checked style="width: 1rem; height: 1rem; accent-color: #06b6d4;">
+            <div class="avatar" style="width: 1.5rem; height: 1.5rem; font-size: 0.75rem;">{{ m.name[0].upper() }}</div>
+            <span style="font-size: 0.875rem; font-weight: 600;">{{ m.name }}</span>
           </label>
           {% endfor %}
         </div>
       </div>
 
-      <div id="split-values" class="hidden">
-        <p class="text-sm text-slate-500 mb-2">Valores por usuário</p>
-        <div id="pct-total" class="hidden text-sm mb-2">
-          <span class="text-slate-600">Percentual total:</span>
-          <span id="pct-total-value" class="font-medium">0%</span>
-          <span id="pct-total-hint" class="ml-2 text-rose-700 hidden">Deve ser exatamente 100%</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+      <div id="split-values" class="hidden" style="margin-top: 1rem;">
+        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;">Valores por usuário</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
           {% for m in group.members.values() %}
-          <div class="flex items-center gap-2">
-            <label class="w-32 text-sm text-slate-600">{{ m.name }}</label>
-            <input name="value_{{ m.id }}" type="number" step="0.01" min="0" class="border rounded px-3 py-2.5 w-full" aria-label="Valor de {{ m.name }}" title="Informe o valor/percentual para {{ m.name }}">
+          <div class="input-group">
+            <label class="input-label">{{ m.name }}</label>
+            <input name="value_{{ m.id }}" type="number" step="0.01" min="0" class="input-field" placeholder="0,00">
           </div>
           {% endfor %}
         </div>
       </div>
 
-      <div class="text-right">
-        <button class="bg-emerald-600 text-white px-4 py-2.5 rounded hover:bg-emerald-700 transition inline-flex items-center gap-2" aria-label="Adicionar despesa" title="Adicionar despesa">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Adicionar despesa
+      <div style="display: flex; justify-content: flex-end; padding-top: 1rem;">
+        <button class="btn-primary" aria-label="Adicionar despesa" title="Adicionar despesa">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          Adicionar Despesa
         </button>
       </div>
     </form>
@@ -237,21 +192,13 @@
     <script>
       const splitType = document.getElementById('split_type');
       const splitValues = document.getElementById('split-values');
-      const formEl = document.getElementById('expense-form');
-      const submitBtn = formEl.querySelector('button[type="submit"], button:not([type])');
-      const pctWrap = document.getElementById('pct-total');
-      const pctValue = document.getElementById('pct-total-value');
-      const pctHint = document.getElementById('pct-total-hint');
       const amountDisplay = document.getElementById('amount_display');
       const amountHidden = document.getElementById('amount');
-      const addSplitKey = `sw:g:{{ group.id }}:addSplitType`;
 
       const normalizeAmountBR = (val) => {
         if (!val) return '';
         let v = ('' + val).trim();
-        // remove spaces
         v = v.replace(/\s+/g, '');
-        // remove thousand separators (.) and convert decimal comma to dot
         v = v.replace(/\./g, '');
         v = v.replace(/,/g, '.');
         const num = parseFloat(v);
@@ -262,399 +209,114 @@
       const syncAmount = () => {
         amountHidden.value = normalizeAmountBR(amountDisplay.value);
       };
+
       if (amountDisplay) {
         syncAmount();
         amountDisplay.addEventListener('input', syncAmount);
       }
 
-      formEl.addEventListener('submit', (e) => {
-        syncAmount();
-        if (!amountHidden.value) {
-          e.preventDefault();
-          amountDisplay.focus();
-        }
-      });
-
-      const updatePctTotal = () => {
-        if (splitType.value !== 'PERCENTAGE') return;
-        const inputs = Array.from(formEl.querySelectorAll('[name^="value_"]'));
-        const sum = inputs.reduce((acc, el) => acc + (parseFloat(el.value) || 0), 0);
-        pctValue.textContent = `${sum.toFixed(2)}%`;
-        const ok = Math.abs(sum - 100) <= 0.01;
-        pctHint.classList.toggle('hidden', ok);
-        submitBtn.disabled = !ok;
-        submitBtn.classList.toggle('opacity-50', !ok);
-        submitBtn.classList.toggle('cursor-not-allowed', !ok);
-      };
-
       const toggleSplit = () => {
         if (splitType.value === 'EXACT' || splitType.value === 'PERCENTAGE') {
           splitValues.classList.remove('hidden');
-          pctWrap.classList.toggle('hidden', splitType.value !== 'PERCENTAGE');
         } else {
           splitValues.classList.add('hidden');
-          pctWrap.classList.add('hidden');
-          submitBtn.disabled = false;
-          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
-        updatePctTotal();
       };
-      // Restore last chosen split type, if present and valid
-      try {
-        const savedST = localStorage.getItem(addSplitKey);
-        if (savedST && Array.from(splitType.options).some(o => o.value === savedST)) {
-          splitType.value = savedST;
-        }
-      } catch {}
-      splitType.addEventListener('change', (e) => {
-        try { localStorage.setItem(addSplitKey, splitType.value); } catch {}
-        toggleSplit();
-      });
-      formEl.addEventListener('input', (e) => {
-        if (e.target && e.target.name && e.target.name.startsWith('value_')) {
-          updatePctTotal();
-        }
-      });
+
+      splitType.addEventListener('change', toggleSplit);
       toggleSplit();
     </script>
   </section>
-</div>
 
-<!-- Expenses and installments -->
-<section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-2 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-    <h2 class="font-semibold mb-3 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 7.5h18M10.5 12h10.5M10.5 16.5H21M10.5 21H21"/></svg>
-      Despesas
-    </h2>
-    <div class="space-y-3">
-      {% for e in group.expenses %}
-      <div class="border rounded" id="exp-{{ e.id }}">
-        <!-- Header: compact view -->
-        <button type="button" class="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 rounded-t outline-none" aria-expanded="false" aria-controls="exp-panel-{{ e.id }}" data-toggle-expense="{{ e.id }}">
-          <div class="text-left">
-            <div class="font-medium">{{ e.description }}</div>
-            <div class="text-xs text-slate-500">Total: {{ e.amount|brl }} · Pago por {{ group.members[e.paid_by].name }}</div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-slate-500 rotate-0 transition-transform" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+  <!-- Existing Expenses -->
+  {% if group.expenses %}
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon">
+        <div class="section-icon-inner" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18M3 7.5h18M10.5 12h10.5M10.5 16.5H21M10.5 21H21"/>
           </svg>
-        </button>
+        </div>
+      </div>
+      <div>
+        <h2>Despesas do Grupo</h2>
+        <p>Histórico de despesas registradas</p>
+      </div>
+    </div>
 
-        <!-- Panel: details -->
-        <div id="exp-panel-{{ e.id }}" class="px-3 pb-3 pt-0 hidden" role="region" aria-label="Detalhes da despesa {{ e.description }}">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-            <div class="order-2 md:order-1 md:col-span-1">
-              <h4 class="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 7.5l3 3-3 3m12-6l3 3-3 3M10.5 6h3m-3 12h3"/></svg>
-                Quem ainda deve ao pagador
-              </h4>
-              <ul class="space-y-0.5">
-                {% set rem = expense_remaining.get(e.id, {}) %}
-                {% for uid, val in rem.items() %}
-                  <li class="text-[11px] flex items-center justify-between text-slate-500">
-                    <span>{{ group.members[uid].name }}</span>
-                    <span class="font-medium">{{ val|brl }}</span>
-                  </li>
-                {% else %}
-                  <li class="text-slate-400 text-[11px]">Nada pendente</li>
-                {% endfor %}
-              </ul>
-            </div>
-
-            <div class="order-1 md:order-2 md:col-span-2">
-              {% if e.installments_count > 1 and e.installments %}
-              <h4 class="text-sm font-semibold mb-1 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 7.5h18M4.5 21h15a1.5 1.5 0 001.5-1.5V7.5H3v12a1.5 1.5 0 001.5 1.5z"/></svg>
-                Parcelas
-              </h4>
-              <div class="space-y-1">
-                {% for inst in e.installments %}
-                <form action="/groups/{{ group.id }}/expenses/{{ e.id }}/installments/{{ inst.number }}/pay" method="post" class="border border-slate-200 rounded px-2 py-2">
-                  <div class="flex flex-wrap items-center gap-2 md:grid md:grid-cols-12">
-                    <div class="order-1 text-sm md:order-none md:col-span-1">#{{ inst.number }}</div>
-                    <div class="order-2 text-sm md:order-none md:col-span-3">{{ inst.due_date|datebr }}</div>
-                    <div class="order-3 text-sm font-medium ml-auto md:ml-0 md:order-none md:col-span-2 md:text-right whitespace-nowrap">{{ inst.amount|brl }}</div>
-                    <div class="order-4 w-1/2 md:w-auto md:order-none md:col-span-4 min-w-0 flex items-center justify-start md:whitespace-normal md:break-words">
-                      {% if inst.paid %}
-                        <span class="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                          <span class="md:truncate md:max-w-[220px]" title="Quitado{% if inst.paid_at %} · {{ inst.paid_at|datebr }}{% endif %}">Quitado{% if inst.paid_at %} · {{ inst.paid_at|datebr }}{% endif %}</span>
-                        </span>
-                      {% else %}
-                        <span class="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l3 3"/></svg>
-                          <span class="md:truncate md:max-w-[220px]" title="Em aberto">Em aberto</span>
-                        </span>
-                      {% endif %}
-                    </div>
-                    <div class="order-5 w-1/2 md:w-auto md:order-none md:col-span-2 flex justify-end md:justify-end items-center md:justify-self-end mt-1 md:mt-0">
-                      {% if not inst.paid %}
-                      <button class="text-xs bg-emerald-600 text-white px-3 py-1 rounded hover:bg-emerald-700 inline-flex items-center gap-1 justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        Marcar pago
-                      </button>
-                      {% else %}
-                      <span class="text-xs text-slate-400">—</span>
-                      {% endif %}
-                    </div>
-                  </div>
-                </form>
-                {% endfor %}
-              </div>
-              {% else %}
-              <div class="text-xs text-slate-500">Sem parcelas</div>
-              {% endif %}
-            </div>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for e in group.expenses %}
+      <div class="card">
+        <div class="card-content">
+          <div>
+            <h3>{{ e.description }}</h3>
+            <p>{{ e.amount|brl }} · Pago por {{ group.members[e.paid_by].name }}</p>
+            {% if e.installments_count > 1 %}
+            <p style="font-size: 0.75rem; color: #64748b;">{{ e.installments_count }} parcelas</p>
+            {% endif %}
           </div>
-
-          <!-- Inline edit form -->
-          <div class="mt-3 border-t border-slate-200 pt-3">
-            <h4 class="text-sm font-semibold mb-2 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.687a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.862 4.487z"/></svg>
-              Editar despesa
-            </h4>
-
-            <!-- Date change + Delete -->
-            <div class="mb-3 flex flex-wrap items-center gap-2">
-              <form action="/groups/{{ group.id }}/expenses/{{ e.id }}/date" method="post" class="flex items-center gap-2" aria-label="Alterar data da despesa">
-                <label class="text-sm text-slate-600">Data</label>
-                <input type="date" name="date" value="{{ e.created_at.strftime('%Y-%m-%d') }}" class="border rounded px-2 py-1" aria-label="Data da despesa">
-                <button class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 inline-flex items-center gap-1" title="Salvar data">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                  Salvar data
-                </button>
-              </form>
-
-              <form action="/groups/{{ group.id }}/expenses/{{ e.id }}/delete" method="post" onsubmit="return confirm('Excluir esta despesa? Esta ação não pode ser desfeita.');" class="ml-auto">
-                <button class="text-xs bg-rose-600 text-white px-3 py-1.5 rounded hover:bg-rose-700 inline-flex items-center gap-1" title="Excluir despesa">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 7.5h12M9 7.5v9m6-9v9M9.75 4.5h4.5A1.5 1.5 0 0115.75 6v1.5H8.25V6a1.5 1.5 0 011.5-1.5zM6.75 19.5h10.5A1.5 1.5 0 0018.75 18V7.5H5.25V18a1.5 1.5 0 001.5 1.5z"/></svg>
-                  Excluir
-                </button>
-              </form>
-            </div>
-
-            <form action="/groups/{{ group.id }}/expenses/{{ e.id }}/edit" method="post" class="space-y-2" aria-label="Editar despesa {{ e.description }}">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                <input name="description" value="{{ e.description }}" class="border rounded px-3 py-2.5" aria-label="Descrição da despesa" title="Descrição da despesa">
-                <input name="amount" type="number" step="0.01" min="0" value="{{ '%.2f'|format(e.amount) }}" class="border rounded px-3 py-2.5" aria-label="Valor total" title="Valor total">
-                <select name="paid_by" class="border rounded px-3 py-2.5" aria-label="Quem pagou" title="Quem pagou">
-                  {% for m in group.members.values() %}
-                  <option value="{{ m.id }}" {% if m.id == e.paid_by %}selected{% endif %}>{{ m.name }}</option>
-                  {% endfor %}
-                </select>
-                <select name="split_type" class="border rounded px-3 py-2.5" aria-label="Tipo de divisão" title="Tipo de divisão" data-edit-split-type="{{ e.id }}">
-                  <option value="EQUAL" {% if e.split_type == 'EQUAL' %}selected{% endif %}>Igual (EQUAL)</option>
-                  <option value="EXACT" {% if e.split_type == 'EXACT' %}selected{% endif %}>Exato (EXACT)</option>
-                  <option value="PERCENTAGE" {% if e.split_type == 'PERCENTAGE' %}selected{% endif %}>Percentual (PERCENTAGE)</option>
-                </select>
-              </div>
-
-              <div id="edit-split-{{ e.id }}" class="border border-slate-200 rounded p-2 {% if e.split_type == 'EQUAL' %}hidden{% endif %}">
-                <div class="text-xs text-slate-500 mb-2">
-                  <span data-hint-exact="{{ e.id }}" class="{% if e.split_type != 'EXACT' %}hidden{% endif %}">Informe valores por pessoa (soma deve igualar o total).</span>
-                  <span data-hint-percentage="{{ e.id }}" class="{% if e.split_type != 'PERCENTAGE' %}hidden{% endif %}">Informe percentuais por pessoa (soma deve ser 100%).</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {% for uid in e.split_among %}
-                    <label class="text-sm">
-                      <span class="block text-slate-600">{{ group.members[uid].name }}</span>
-                      <div class="flex items-center gap-2">
-                        <input name="split_values[{{ uid }}]" type="number" step="0.01" min="0" value="{{ e.split_values.get(uid, '') }}" class="border rounded px-3 py-2.5 w-full" aria-label="Valor/Percentual de {{ group.members[uid].name }}">
-                        <span class="text-slate-500 text-sm percentage-suffix {% if e.split_type != 'PERCENTAGE' %}hidden{% endif %}" data-percentage-suffix="{{ e.id }}">%</span>
-                      </div>
-                    </label>
-                  {% endfor %}
-                </div>
-              </div>
-
-              <div class="text-right">
-                <button class="bg-sky-600 text-white px-3 py-2 rounded hover:bg-sky-700 inline-flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                  Salvar alterações
-                </button>
-              </div>
-            </form>
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; color: #64748b;">{{ e.created_at.strftime('%d/%m/%Y') }}</span>
           </div>
         </div>
       </div>
-      {% else %}
-        <div class="text-slate-400 inline-flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7.5h18M3 12h12m-12 4.5h18"/></svg>
-          Nenhuma despesa ainda
-        </div>
       {% endfor %}
     </div>
-  </div>
+  </section>
+  {% endif %}
 
-  <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-    <h2 class="font-semibold mb-3 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 10.5v9.75A1.5 1.5 0 006 21.75h12a1.5 1.5 0 001.5-1.5v-9.75"/></svg>
-      Saldos
-    </h2>
-    <ul class="space-y-2">
+  <!-- Balance Summary -->
+  {% if group.members %}
+  <section class="section">
+    <div class="section-header">
+      <div class="section-icon">
+        <div class="section-icon-inner" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 10.5v9.75A1.5 1.5 0 006 21.75h12a1.5 1.5 0 001.5-1.5v-9.75"/>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <h2>Saldos do Grupo</h2>
+        <p>Resumo de quem deve para quem</p>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
       {% for u in group.members.values() %}
         {% set net = 0 %}
         {% for amt in u.balance.values() %}
           {% set net = net + amt %}
         {% endfor %}
         {% if net != 0 %}
-        <li class="text-sm flex items-center justify-between">
-          <span class="font-medium">{{ u.name }}</span>
-          {% if net < 0 %}
-            <span class="inline-flex items-center gap-1 text-rose-700">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-              {{ (-net)|brl }}
-            </span>
-          {% else %}
-            <span class="inline-flex items-center gap-1 text-emerald-700">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
-              {{ net|brl }}
-            </span>
-          {% endif %}
-        </li>
-        {% endif %}
-      {% else %}
-        <li class="text-slate-400 text-sm inline-flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12"/></svg>
-          Nenhum saldo
-        </li>
-      {% endfor %}
-    </ul>
-    <h3 class="font-semibold mt-4 mb-2 flex items-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 7.5l3 3-3 3m12-6l3 3-3 3M10.5 6h3m-3 12h3"/></svg>
-      Acertar contas
-    </h3>
-    <ul class="space-y-1">
-      {% for t in transactions %}
-      <li class="text-sm flex items-center justify-between">
-        <span class="inline-flex items-center gap-2">
-          {{ group.members[t['from']].name }}
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-          {{ group.members[t['to']].name }}
-        </span>
-        <span class="font-medium">{{ t['amount']|brl }}</span>
-      </li>
-      {% else %}
-      <li class="text-slate-400 text-sm inline-flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-        Tudo acertado!
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-</section>
-
-<!-- Month-by-month analysis as carousel -->
-<section class="mt-6 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-  <h2 class="font-semibold mb-3 flex items-center gap-2">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 7.5h18M4.5 21h15a1.5 1.5 0 001.5-1.5V7.5H3v12a1.5 1.5 0 001.5 1.5z"/></svg>
-    Análise mês a mês
-  </h2>
-  {% if monthly %}
-  {% set months = monthly|dictsort %}
-  <div class="flex items-center gap-2" role="region" aria-label="Análise mensal">
-    <button type="button" id="month-prev" class="p-2 rounded border border-slate-200 hover:bg-slate-50" aria-label="Mês anterior">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
-    </button>
-    <div class="flex-1">
-      <div id="month-cards" class="relative" aria-live="polite">
-        {% for ym, per_user in months %}
-        <div class="month-card {% if not loop.first %}hidden{% endif %}" data-index="{{ loop.index0 }}">
-          <div class="flex items-center justify-between mb-2">
-            <div class="text-sm font-medium text-slate-600" id="month-title-{{ loop.index0 }}">{{ ym|monthbr }}</div>
-            <div class="text-xs text-slate-500">{{ per_user|length }} participantes</div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <h3 class="text-sm font-semibold mb-1 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7.5h18M3 12h12m-12 4.5h18"/></svg>
-                Saldos do mês
-              </h3>
-              <ul class="mt-1 grid grid-cols-1 gap-1">
-                {% for uid, amt in per_user.items() %}
-                  {% set user = group.members.get(uid) %}
-                  {% if user %}
-                  <li class="text-sm flex items-center justify-between bg-slate-50 border border-slate-200 rounded px-2 py-1">
-                    <span>{{ user.name }}</span>
-                    <span class="{% if amt >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">{{ amt|brl }}</span>
-                  </li>
-                  {% endif %}
-                {% endfor %}
-              </ul>
-            </div>
-            <div>
-              <h3 class="text-sm font-semibold mb-1 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 7.5l3 3-3 3m12-6l3 3-3 3M10.5 6h3m-3 12h3"/></svg>
-                Quem paga quem
-              </h3>
-              <ul class="space-y-1">
-                {% set txs = monthly_transactions.get(ym, []) %}
-                {% for t in txs %}
-                  <li class="text-sm flex items-center justify-between">
-                    <span class="inline-flex items-center gap-2">
-                      {{ group.members[t['from']].name }}
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-slate-500"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-                      {{ group.members[t['to']].name }}
-                    </span>
-                    <span class="font-medium">{{ t['amount']|brl }}</span>
-                  </li>
-                {% else %}
-                  <li class="text-slate-400 text-sm inline-flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                    Tudo acertado neste mês
-                  </li>
-                {% endfor %}
-              </ul>
+        <div class="card">
+          <div class="card-content">
+            <div class="avatar">{{ u.name[0].upper() }}</div>
+            <div style="flex: 1;">
+              <h3>{{ u.name }}</h3>
+              {% if net < 0 %}
+                <p style="color: #dc2626;">Deve {{ (-net)|brl }}</p>
+              {% else %}
+                <p style="color: #059669;">Recebe {{ net|brl }}</p>
+              {% endif %}
             </div>
           </div>
         </div>
-        {% endfor %}
+        {% endif %}
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:2rem; height:2rem; color:white;">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12"/>
+          </svg>
+        </div>
+        <h3>Tudo acertado!</h3>
+        <p>Não há saldos pendentes no grupo</p>
       </div>
+      {% endfor %}
     </div>
-    <button type="button" id="month-next" class="p-2 rounded border border-slate-200 hover:bg-slate-50" aria-label="Próximo mês">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-    </button>
-  </div>
-
-  <div class="mt-2 text-center text-xs text-slate-500" id="month-position" aria-live="polite"></div>
-
-  <script>
-    (function(){
-      const cards = Array.from(document.querySelectorAll('#month-cards .month-card'));
-      if (!cards.length) return;
-      const monthKey = `sw:g:{{ group.id }}:monthIdx`;
-      let savedIdx = parseInt(localStorage.getItem(monthKey));
-      if (isNaN(savedIdx)) savedIdx = cards.length - 1;
-      let idx = Math.max(0, Math.min(cards.length - 1, savedIdx));
-      const prev = document.getElementById('month-prev');
-      const next = document.getElementById('month-next');
-      const pos = document.getElementById('month-position');
-
-      const update = () => {
-        cards.forEach((el, i) => el.classList.toggle('hidden', i !== idx));
-        pos.textContent = `${idx + 1} / ${cards.length}`;
-        prev.disabled = idx === 0;
-        next.disabled = idx === cards.length - 1;
-        prev.classList.toggle('opacity-50', prev.disabled);
-        next.classList.toggle('opacity-50', next.disabled);
-        try { localStorage.setItem(monthKey, String(idx)); } catch {}
-      };
-      prev.addEventListener('click', () => { if (idx > 0) { idx--; update(); } });
-      next.addEventListener('click', () => { if (idx < cards.length - 1) { idx++; update(); } });
-      // Keyboard support: arrows when buttons focused
-      [prev, next].forEach(btn => btn.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') { prev.click(); }
-        if (e.key === 'ArrowRight') { next.click(); }
-      }));
-      update();
-    })();
-  </script>
-  {% else %}
-  <div class="text-slate-400 inline-flex items-center gap-2">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 7.5h18M4.5 21h15"/></svg>
-    Sem dados ainda
-  </div>
+  </section>
   {% endif %}
-</section>
+</div>
 {% endblock %}

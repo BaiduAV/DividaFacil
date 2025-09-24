@@ -92,23 +92,46 @@ async def healthz():
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Show login page."""
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "users": list(USERS.values())}
-    )
+    try:
+        # Get users from database instead of state to avoid issues
+        users_dict = DatabaseService.get_all_users()
+        users_list = list(users_dict.values())
 
-@app.post("/login")
-async def login(request: Request, user_id: str = Form(...)):
-    """Login user by setting session."""
-    user = DatabaseService.get_user(user_id)
-    if not user:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "users": list(USERS.values()), "error": "User not found"}
+            {"request": request, "users": users_list}
         )
-    
-    login_user(request, user)
-    return RedirectResponse("/", status_code=303)
+    except Exception as e:
+        # If there's an error loading users, show empty list with error
+        print(f"Error loading users for login page: {e}")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "users": [], "error": "Error loading users"}
+        )
+
+@app.post("/login")
+async def login(request: Request, email: str = Form(...)):
+    """Login user by setting session."""
+    try:
+        user = DatabaseService.get_user_by_email(email)
+        if not user:
+            # Get users for the dropdown again
+            users_dict = DatabaseService.get_all_users()
+            users_list = list(users_dict.values())
+
+            return templates.TemplateResponse(
+                "login.html",
+                {"request": request, "users": users_list, "error": "User not found"}
+            )
+
+        login_user(request, user)
+        return RedirectResponse("/", status_code=303)
+    except Exception as e:
+        print(f"Login error: {e}")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "users": [], "error": f"Login failed: {str(e)}"}
+        )
 
 @app.post("/logout")
 async def logout(request: Request):
