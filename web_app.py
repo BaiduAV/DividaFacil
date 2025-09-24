@@ -1,18 +1,16 @@
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import logging
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.models.group import Group
 from src.services.database_service import DatabaseService
 from src.settings import get_settings
 from src.logging_config import configure_logging
 from src.template_engine import templates
 from src.state import USERS, GROUPS
-from src.services.database_service import DatabaseService
-from src.auth import get_current_user_from_session, require_authentication
+from src.auth import get_current_user_from_session, login_user, logout_user
 from src.routers.users import router as users_router
 from src.routers.groups import router as groups_router
 from src.routers.expenses import router as expenses_router
@@ -20,6 +18,8 @@ from src.routers.auth import router as auth_router
 from src.routers.api_users import router as api_users_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_expenses import router as api_expenses_router
+from src.routers.api_auth import router as api_auth_router
+from src.services.expense_service import ExpenseService
 
 # App settings and logging
 settings = get_settings()
@@ -27,7 +27,7 @@ app = FastAPI(title=settings.APP_NAME)
 configure_logging(settings.LOG_LEVEL)
 
 # Add session middleware for authentication
-app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY, session_cookie="session_id")
 
 def create_app() -> FastAPI:
     """Minimal application factory returning the configured FastAPI app.
@@ -52,9 +52,7 @@ app.include_router(expenses_router)
 app.include_router(api_users_router)
 app.include_router(api_groups_router)
 app.include_router(api_expenses_router)
-
-# Import helper functions
-from src.routers.common import get_group_or_404
+app.include_router(api_auth_router)
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -90,8 +88,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
-
-from src.auth import get_current_user_from_session, login_user, logout_user
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -151,9 +147,7 @@ async def dashboard(request: Request):
             "users": list(USERS.values()),
             "groups": user_groups,
             "user_expenses": user_expenses,
-            # Total number of expenses created by this user
             "total_expenses": len(user_expenses),
+            "is_authenticated": True,
         },
     )
-
-

@@ -1,25 +1,26 @@
 # Web Framework
-fastapi==0.104.1
-uvicorn==0.24.0
-jinja2==3.1.2
-python-multipart==0.0.6
-email-validator==2.1.0
+fastapi==0.117.1
+uvicorn==0.37.0
+jinja2==3.1.6
+python-multipart==0.0.20
+email-validator==2.3.0
 
 # Database
-sqlalchemy==2.0.34
-alembic==1.13.1
-psycopg2-binary==2.9.9
+sqlalchemy==2.0.43
+alembic==1.16.5
+psycopg2-binary==2.9.10
 
 # Authentication
-bcrypt==4.1.2
-itsdangerous==2.1.2
+bcrypt==4.3.0
+itsdangerous==2.2.0
 
 # CLI and Utilities
-rich==13.5.2
-python-dateutil==2.8.2
+rich==14.1.0
+python-dateutil==2.9.0.post0
 
 # HTTP Client (for testing)
-httpx==0.25.2
+httpx==0.28.1
+requests==2.32.5
 
 # Testing
-pytest==7.4.0
+pytest==8.4.2
