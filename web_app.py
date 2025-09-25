@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -12,19 +12,13 @@ from src.routers.api_auth import router as api_auth_router
 from src.routers.api_expenses import router as api_expenses_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_users import router as api_users_router
-from src.routers.auth import router as auth_router
-from src.routers.expenses import router as expenses_router
-from src.routers.groups import router as groups_router
-from src.routers.users import router as users_router
-from src.routers.web_auth import router as web_auth_router  # added
-from src.services.dashboard_service import DashboardService
 from src.settings import get_settings
 from src.template_engine import templates
 
 logger = logging.getLogger(__name__)
 
 # Constants
-API_PREFIX = "/api/"
+API_PREFIX = "/api"
 SESSION_COOKIE_NAME = "session_id"
 HEALTH_CHECK_RESPONSE = {"status": "ok"}
 
@@ -55,7 +49,7 @@ class AppFactory:
         # Mount static files
         self._mount_static_files(app)
 
-        # Include routers
+        # Include routers - API routes must come before static mounting for precedence
         self._include_routers(app)
 
         # Add exception handlers
@@ -64,7 +58,7 @@ class AppFactory:
         # Add health check endpoint
         self._add_health_check(app)
 
-        # Add dashboard route
+        # Add catch-all route for React app (must be last)
         self._add_dashboard_route(app)
 
         return app
@@ -80,19 +74,11 @@ class AppFactory:
     def _mount_static_files(self, app: FastAPI) -> None:
         """Mount static files directory."""
         app.mount("/static", StaticFiles(directory=self.settings.STATIC_DIR), name="static")
+        # React assets are served via catch-all route
 
     def _include_routers(self, app: FastAPI) -> None:
         """Include all application routers."""
-        # Web routers
-        routers = [
-            web_auth_router,  # include web auth routes first
-            auth_router,
-            users_router,
-            groups_router,
-            expenses_router,
-        ]
-
-        # API routers
+        # Only include API routers - React app handles frontend
         api_routers = [
             api_users_router,
             api_groups_router,
@@ -100,11 +86,8 @@ class AppFactory:
             api_auth_router,
         ]
 
-        for router in routers:
-            app.include_router(router)
-
         for router in api_routers:
-            app.include_router(router)
+            app.include_router(router, prefix=API_PREFIX)
 
     def _add_exception_handlers(self, app: FastAPI) -> None:
         """Add exception handlers to the application."""
@@ -155,11 +138,27 @@ class AppFactory:
             return HEALTH_CHECK_RESPONSE
 
     def _add_dashboard_route(self, app: FastAPI) -> None:
-        """Add dashboard route."""
+        """Add route to serve React app."""
+        from fastapi.responses import FileResponse, RedirectResponse
+        import os
 
-        @app.get("/", response_class=HTMLResponse)
-        async def dashboard(request: Request):
-            return await DashboardService.render_dashboard(request)
+        @app.get("/")
+        async def root():
+            return RedirectResponse(url="/app")
+
+        @app.get("/app")
+        async def serve_react_app():
+            index_path = "frontend/build/index.html"
+            if os.path.exists(index_path):
+                return FileResponse(index_path, media_type="text/html")
+            raise HTTPException(status_code=404, detail="React app not found")
+
+        @app.get("/app/{full_path:path}")
+        async def serve_react_assets(full_path: str):
+            file_path = os.path.join("frontend/build", full_path)
+            if os.path.exists(file_path):
+                return FileResponse(file_path)
+            raise HTTPException(status_code=404, detail="Asset not found")
 
 
 # Create application instance
