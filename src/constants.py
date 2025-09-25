@@ -25,8 +25,7 @@ REDIRECT_STATUS_CODE: Final[int] = 303
 # Database constants
 DEFAULT_DATABASE_URL: Final[str] = "sqlite:///./dividafacil.db"
 
-# Template constants
-DEFAULT_TEMPLATE_DIR: Final[str] = "templates"
+# Static files constants
 DEFAULT_STATIC_DIR: Final[str] = "static"
 
 # Error messages

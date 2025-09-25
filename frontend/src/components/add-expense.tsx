@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -31,28 +31,67 @@ import {
   Minus,
   Clock,
 } from "lucide-react";
+import { apiClient, Group, User } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 interface AddExpenseProps {
   onBack: () => void;
 }
 
 export function AddExpense({ onBack }: AddExpenseProps) {
+  const { user } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedPayer, setSelectedPayer] = useState("you");
-  const [splitType, setSplitType] = useState("equal");
+  const [selectedPayer, setSelectedPayer] = useState("");
+  const [splitType, setSplitType] = useState<"EQUAL" | "EXACT" | "PERCENTAGE">("EQUAL");
   const [isInstallment, setIsInstallment] = useState(false);
-  const [installmentMonths, setInstallmentMonths] =
-    useState("3");
+  const [installmentMonths, setInstallmentMonths] = useState("3");
   const [startDate, setStartDate] = useState("");
+  const [splitAmong, setSplitAmong] = useState<string[]>([]);
+  const [splitValues, setSplitValues] = useState<Record<string, number>>({});
 
-  const groups = [
-    { id: "weekend-trip", name: "Weekend Trip", members: 4 },
-    { id: "dinner-club", name: "Dinner Club", members: 6 },
-    { id: "office-lunch", name: "Office Lunch", members: 8 },
-  ];
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  useEffect(() => {
+    // Set default payer to current user
+    if (user && !selectedPayer) {
+      setSelectedPayer(user.id);
+    }
+  }, [user, selectedPayer]);
+
+  useEffect(() => {
+    // When group changes, update split among to include all group members
+    if (selectedGroup && groups.length > 0) {
+      const group = groups.find(g => g.id === selectedGroup);
+      if (group) {
+        const memberIds = Object.keys(group.members);
+        setSplitAmong(memberIds);
+        // Reset split values when group changes
+        setSplitValues({});
+      }
+    }
+  }, [selectedGroup, groups]);
+
+  const loadGroups = async () => {
+    try {
+      setLoading(true);
+      const userGroups = await apiClient.getGroups();
+      setGroups(userGroups);
+    } catch (error) {
+      toast.error("Failed to load groups");
+      console.error("Load groups error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { id: "food", name: "Food & Drink", icon: "🍽️" },
@@ -63,16 +102,59 @@ export function AddExpense({ onBack }: AddExpenseProps) {
     { id: "other", name: "Other", icon: "💰" },
   ];
 
-  const groupMembers = [
-    { id: "you", name: "You", initials: "YU", isYou: true },
-    { id: "sarah", name: "Sarah M.", initials: "SM" },
-    { id: "mike", name: "Mike L.", initials: "ML" },
-    { id: "emma", name: "Emma K.", initials: "EK" },
-  ];
+  // Get current group members
+  const currentGroup = groups.find(g => g.id === selectedGroup);
+  const groupMembers = currentGroup ? Object.values(currentGroup.members).map(member => ({
+    id: member.id,
+    name: member.name,
+    initials: member.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+    isYou: user?.id === member.id
+  })) : [];
 
-  const [selectedMembers, setSelectedMembers] = useState(
-    groupMembers.map((member) => member.id),
-  );
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Update selected members when group changes
+    setSelectedMembers(groupMembers.map(member => member.id));
+  }, [selectedGroup, groups]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedGroup || !description || !amount || !selectedPayer) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (selectedMembers.length === 0) {
+      toast.error("Please select at least one member to split with");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      const expenseData = {
+        description,
+        amount: parseFloat(amount),
+        paid_by: selectedPayer,
+        split_type: splitType,
+        split_among: selectedMembers,
+        split_values: splitType === "EQUAL" ? undefined : selectedMembers.map(memberId => splitValues[memberId] || 0),
+        installments_count: isInstallment ? parseInt(installmentMonths) : 1,
+        first_due_date: startDate ? new Date(startDate).toISOString() : undefined,
+      };
+
+      await apiClient.createExpense(selectedGroup, expenseData);
+      toast.success("Expense added successfully!");
+      onBack();
+    } catch (error) {
+      toast.error("Failed to add expense");
+      console.error("Add expense error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleMemberToggle = (memberId: string) => {
     setSelectedMembers((prev) =>
@@ -83,7 +165,7 @@ export function AddExpense({ onBack }: AddExpenseProps) {
   };
 
   const calculateSplit = () => {
-    if (!amount || selectedMembers.length === 0) return 0;
+    if (!amount || selectedMembers.length === 0) return "0.00";
     const totalPerPerson =
       parseFloat(amount) / selectedMembers.length;
     if (isInstallment) {
@@ -102,10 +184,10 @@ export function AddExpense({ onBack }: AddExpenseProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button type="button" variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -200,7 +282,7 @@ export function AddExpense({ onBack }: AddExpenseProps) {
                       >
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4" />
-                          {group.name} ({group.members} members)
+                          {group.name} ({Object.keys(group.members).length} members)
                         </div>
                       </SelectItem>
                     ))}
@@ -369,11 +451,11 @@ export function AddExpense({ onBack }: AddExpenseProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Button
                   variant={
-                    splitType === "equal"
+                    splitType === "EQUAL"
                       ? "default"
                       : "outline"
                   }
-                  onClick={() => setSplitType("equal")}
+                  onClick={() => setSplitType("EQUAL")}
                   className="h-auto p-3 flex flex-col gap-1"
                 >
                   <div className="text-sm font-medium">
@@ -385,11 +467,11 @@ export function AddExpense({ onBack }: AddExpenseProps) {
                 </Button>
                 <Button
                   variant={
-                    splitType === "exact"
+                    splitType === "EXACT"
                       ? "default"
                       : "outline"
                   }
-                  onClick={() => setSplitType("exact")}
+                  onClick={() => setSplitType("EXACT")}
                   className="h-auto p-3 flex flex-col gap-1"
                 >
                   <div className="text-sm font-medium">
@@ -401,11 +483,11 @@ export function AddExpense({ onBack }: AddExpenseProps) {
                 </Button>
                 <Button
                   variant={
-                    splitType === "percentage"
+                    splitType === "PERCENTAGE"
                       ? "default"
                       : "outline"
                   }
-                  onClick={() => setSplitType("percentage")}
+                  onClick={() => setSplitType("PERCENTAGE")}
                   className="h-auto p-3 flex flex-col gap-1"
                 >
                   <div className="text-sm font-medium">
@@ -445,11 +527,49 @@ export function AddExpense({ onBack }: AddExpenseProps) {
                         </span>
                       </div>
                       {selectedMembers.includes(member.id) &&
-                        splitType === "equal" && (
+                        splitType === "EQUAL" && (
                           <Badge variant="secondary">
                             ${calculateSplit()}
                             {isInstallment ? "/month" : ""}
                           </Badge>
+                        )}
+                      {selectedMembers.includes(member.id) &&
+                        splitType === "EXACT" && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">$</span>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              value={splitValues[member.id] || ""}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setSplitValues(prev => ({
+                                  ...prev,
+                                  [member.id]: value
+                                }));
+                              }}
+                              className="w-20 h-8"
+                            />
+                          </div>
+                        )}
+                      {selectedMembers.includes(member.id) &&
+                        splitType === "PERCENTAGE" && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={splitValues[member.id] || ""}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setSplitValues(prev => ({
+                                  ...prev,
+                                  [member.id]: value
+                                }));
+                              }}
+                              className="w-16 h-8"
+                            />
+                            <span className="text-sm">%</span>
+                          </div>
                         )}
                     </div>
                   ))}
@@ -523,11 +643,11 @@ export function AddExpense({ onBack }: AddExpenseProps) {
                 </div>
                 {isInstallment ? (
                   <div className="text-sm text-muted-foreground">
-                    {selectedPayer === "you"
+                    {selectedPayer === user?.id
                       ? `Pay ${installmentMonths} monthly installments of ${calculateSplit()}`
                       : `Owe ${installmentMonths} monthly payments of ${calculateSplit()} to ${groupMembers.find((m) => m.id === selectedPayer)?.name}`}
                   </div>
-                ) : selectedPayer === "you" ? (
+                ) : selectedPayer === user?.id ? (
                   <div className="text-sm text-muted-foreground">
                     Pay ${amount || "0.00"} and get back $
                     {(
@@ -570,14 +690,18 @@ export function AddExpense({ onBack }: AddExpenseProps) {
             >
               Cancel
             </Button>
-            <Button className="flex-1 gradient-primary border-0 shadow-lg">
-              {isInstallment
-                ? "Create Installment Plan"
-                : "Add Expense"}
+            <Button className="flex-1 gradient-primary border-0 shadow-lg" type="submit" disabled={submitting}>
+              {submitting ? (
+                "Adding..."
+              ) : isInstallment ? (
+                "Create Installment Plan"
+              ) : (
+                "Add Expense"
+              )}
             </Button>
           </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

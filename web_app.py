@@ -13,7 +13,6 @@ from src.routers.api_expenses import router as api_expenses_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_users import router as api_users_router
 from src.settings import get_settings
-from src.template_engine import templates
 
 logger = logging.getLogger(__name__)
 
@@ -102,32 +101,20 @@ class AppFactory:
 
     async def _handle_http_exception(
         self, request: Request, exc: StarletteHTTPException
-    ) -> JSONResponse | HTMLResponse:
-        """Handle HTTP exceptions with appropriate response format."""
-        # For API requests, return JSON error responses
-        if request.url.path.startswith(API_PREFIX):
-            return JSONResponse(
-                status_code=exc.status_code, content={"error": "HTTP Error", "detail": exc.detail}
-            )
+    ) -> JSONResponse:
+        """Handle HTTP exceptions with JSON responses."""
+        # Return JSON error responses for all requests (API and frontend)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": "HTTP Error", "detail": exc.detail}
+        )
 
-        # Render 404 with template when appropriate
-        if exc.status_code == 404:
-            return templates.TemplateResponse(
-                "errors/404.html",
-                {"request": request},
-                status_code=404,
-            )
-
-        # Fallback to default behavior for other HTTP errors
-        raise exc
-
-    async def _handle_unhandled_exception(self, request: Request, exc: Exception) -> HTMLResponse:
+    async def _handle_unhandled_exception(self, request: Request, exc: Exception) -> JSONResponse:
         """Handle unhandled exceptions."""
         logger.exception("Unhandled server error")
-        return templates.TemplateResponse(
-            "errors/500.html",
-            {"request": request},
+        return JSONResponse(
             status_code=500,
+            content={"error": "Internal Server Error", "detail": "An unexpected error occurred"}
         )
 
     def _add_health_check(self, app: FastAPI) -> None:

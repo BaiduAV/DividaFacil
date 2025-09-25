@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -20,43 +21,58 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
+import { apiClient, Group, Expense, User } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Dashboard() {
-  const balanceData = [
-    { type: "owed", amount: 245.8, color: "text-green-600" },
-    { type: "owing", amount: 89.5, color: "text-red-600" },
-  ];
+  const { user } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [owedAmount, setOwedAmount] = useState(0);
+  const [owingAmount, setOwingAmount] = useState(0);
 
-  const recentGroups = [
-    {
-      id: 1,
-      name: "Weekend Trip",
-      members: 4,
-      totalSpent: 1250.0,
-      yourShare: 312.5,
-      settled: false,
-    },
-    {
-      id: 2,
-      name: "Dinner Club",
-      members: 6,
-      totalSpent: 284.3,
-      yourShare: 47.38,
-      settled: true,
-    },
-    {
-      id: 3,
-      name: "Office Lunch",
-      members: 8,
-      totalSpent: 156.4,
-      yourShare: 19.55,
-      settled: false,
-    },
-  ];
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const userGroups = await apiClient.getGroups();
+
+      // Calculate total balance from all groups
+      let totalOwed = 0;
+      let totalOwing = 0;
+
+      userGroups.forEach(group => {
+        if (user && group.balances[user.id]) {
+          const balance = group.balances[user.id];
+          if (balance > 0) {
+            totalOwed += balance;
+          } else {
+            totalOwing += Math.abs(balance);
+          }
+        }
+      });
+
+      setGroups(userGroups);
+      setTotalBalance(totalOwed - totalOwing);
+      setOwedAmount(totalOwed);
+      setOwingAmount(totalOwing);
+    } catch (error) {
+      toast.error("Failed to load dashboard data");
+      console.error("Dashboard error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data for recent expenses (will be replaced with API call)
   const recentExpenses = [
     {
-      id: 1,
+      id: "1",
       description: "Hotel Stay",
       amount: 450.0,
       paidBy: "Sarah M.",
@@ -64,7 +80,7 @@ export function Dashboard() {
       date: "2 hours ago",
     },
     {
-      id: 2,
+      id: "2",
       description: "Dinner at Romano's",
       amount: 89.5,
       paidBy: "You",
@@ -72,7 +88,7 @@ export function Dashboard() {
       date: "1 day ago",
     },
     {
-      id: 3,
+      id: "3",
       description: "Uber Ride",
       amount: 24.8,
       paidBy: "Mike L.",
@@ -93,11 +109,11 @@ export function Dashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              +$156.30
+            <div className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {totalBalance >= 0 ? '+' : ''}${Math.abs(totalBalance).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              You are owed more than you owe
+              {totalBalance >= 0 ? 'You are owed more than you owe' : 'You owe more than you are owed'}
             </p>
           </CardContent>
         </Card>
@@ -111,10 +127,10 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              $245.80
+              ${owedAmount.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              From 3 people
+              From {groups.length} group{groups.length !== 1 ? 's' : ''}
             </p>
           </CardContent>
         </Card>
@@ -128,10 +144,10 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              $89.50
+              ${owingAmount.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              To 2 people
+              To settle with others
             </p>
           </CardContent>
         </Card>
@@ -207,7 +223,7 @@ export function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {recentGroups.map((group) => (
+          {groups.slice(0, 3).map((group) => (
             <div
               key={group.id}
               className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -219,22 +235,22 @@ export function Dashboard() {
                 <div>
                   <h4 className="font-medium">{group.name}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {group.members} members • $
-                    {group.totalSpent.toFixed(2)} total
+                    {Object.keys(group.members).length} members • $
+                    {group.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} total
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-medium">
-                  ${group.yourShare.toFixed(2)}
+                  ${user && group.balances[user.id] ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
                 </p>
                 <Badge
                   variant={
-                    group.settled ? "secondary" : "outline"
+                    (user && group.balances[user.id] && group.balances[user.id] === 0) ? "secondary" : "outline"
                   }
                   className="text-xs"
                 >
-                  {group.settled ? "Settled" : "Active"}
+                  {(user && group.balances[user.id] && group.balances[user.id] === 0) ? "Settled" : "Active"}
                 </Badge>
               </div>
             </div>

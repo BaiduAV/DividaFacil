@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -37,61 +37,64 @@ import {
   Users,
   DollarSign,
 } from "lucide-react";
+import { apiClient, Expense, Group } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Installments() {
+  const { user } = useAuth();
+  const [installmentExpenses, setInstallmentExpenses] = useState<Expense[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState("calendar");
 
-  const installmentPlans = [
-    {
-      id: 1,
-      name: "Europe Trip 2025",
-      description: "Summer vacation expenses",
-      totalAmount: 4500.0,
-      monthlyAmount: 750.0,
-      startDate: "2024-10-01",
-      endDate: "2025-03-01",
-      group: "Travel Buddies",
-      members: 3,
-      status: "active",
-      completedPayments: 2,
-      totalPayments: 6,
-      nextPayment: "2024-12-01",
-      yourMonthlyShare: 250.0,
-    },
-    {
-      id: 2,
-      name: "Shared Apartment Rent",
-      description: "Monthly rent split",
-      totalAmount: 7200.0,
-      monthlyAmount: 1200.0,
-      startDate: "2024-09-01",
-      endDate: "2025-02-01",
-      group: "Roommates",
-      members: 4,
-      status: "active",
-      completedPayments: 3,
-      totalPayments: 6,
-      nextPayment: "2025-01-01",
-      yourMonthlyShare: 300.0,
-    },
-    {
-      id: 3,
-      name: "Car Purchase",
-      description: "Used car for group trips",
-      totalAmount: 12000.0,
-      monthlyAmount: 1000.0,
-      startDate: "2024-06-01",
-      endDate: "2025-05-01",
-      group: "Car Pool",
-      members: 4,
-      status: "active",
-      completedPayments: 6,
-      totalPayments: 12,
-      nextPayment: "2025-01-01",
-      yourMonthlyShare: 250.0,
-    },
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [expensesData, groupsData] = await Promise.all([
+        apiClient.getExpenses(),
+        apiClient.getGroups(),
+      ]);
+      
+      // Filter expenses that have installments
+      const installmentExpensesData = expensesData.filter(expense => expense.installments_count > 1);
+      setInstallmentExpenses(installmentExpensesData);
+      setGroups(groupsData);
+    } catch (error) {
+      toast.error("Failed to load installment data");
+      console.error("Load installments error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getExpenseGroup = (expense: Expense) => {
+    return groups.find(group => 
+      group.expenses?.some(e => e.id === expense.id)
+    );
+  };
+
+  const getYourShare = (expense: Expense) => {
+    if (!user) return 0;
+    
+    if (expense.split_type === 'EQUAL') {
+      return expense.amount / expense.split_among.length;
+    } else if (expense.split_values && expense.split_among.includes(user.id)) {
+      const userIndex = expense.split_among.indexOf(user.id);
+      if (expense.split_type === 'EXACT') {
+        return expense.split_values[userIndex];
+      } else if (expense.split_type === 'PERCENTAGE') {
+        return (expense.amount * expense.split_values[userIndex]) / 100;
+      }
+    }
+    
+    return 0;
+  };
 
   const upcomingPayments = [
     {
@@ -429,106 +432,73 @@ export function Installments() {
         {/* Active Plans View */}
         <TabsContent value="plans" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {installmentPlans.map((plan) => (
-              <Card
-                key={plan.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">
-                        {plan.name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {plan.description}
-                      </p>
+            {installmentExpenses.map((expense) => {
+              const group = getExpenseGroup(expense);
+              const yourShare = getYourShare(expense);
+              const monthlyAmount = expense.amount / expense.installments_count;
+              const yourMonthlyShare = yourShare / expense.installments_count;
+              
+              return (
+                <Card
+                  key={expense.id}
+                  className="hover:shadow-md transition-shadow"
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          {expense.description}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Installment Plan
+                        </p>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        Active
+                      </Badge>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="bg-green-50 text-green-700"
-                    >
-                      Active
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Progress</span>
-                      <span>
-                        {plan.completedPayments}/
-                        {plan.totalPayments} payments
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        (plan.completedPayments /
-                          plan.totalPayments) *
-                        100
-                      }
-                      className="h-2"
-                    />
-                  </div>
-
-                  {/* Financial Details */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">
-                        Total Amount
-                      </p>
-                      <p className="font-bold">
-                        ${plan.totalAmount.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">
-                        Your Monthly Share
-                      </p>
-                      <p className="font-bold">
-                        ${plan.yourMonthlyShare.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">
-                        Group
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        <span>
-                          {plan.group} ({plan.members})
-                        </span>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Total Amount</p>
+                        <p className="font-medium">${expense.amount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Monthly Amount</p>
+                        <p className="font-medium">${monthlyAmount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Your Monthly Share</p>
+                        <p className="font-medium">${yourMonthlyShare.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Installments</p>
+                        <p className="font-medium">{expense.installments_count}</p>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">
-                        Next Payment
-                      </p>
-                      <p className="font-medium">
-                        {new Date(
-                          plan.nextPayment,
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      View Details
-                    </Button>
-                    <Button size="sm" className="flex-1">
-                      Pay Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>0 / {expense.installments_count}</span>
+                      </div>
+                      <Progress value={0} className="h-2" />
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>{group?.name || "Unknown Group"}</span>
+                      <span>•</span>
+                      <span>{expense.split_among.length} members</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 

@@ -5,7 +5,7 @@ Aplicação moderna para divisão de despesas com interface React e backend Fast
 ## Visão geral
 
 - **Frontend**: React + Vite + Tailwind CSS + Radix UI
-- **Backend**: FastAPI + Uvicorn
+- **Backend**: FastAPI + Uvicorn (API-only)
 - **Banco**: SQLite (desenvolvimento) ou PostgreSQL (produção) via `DATABASE_URL`
 - **Deploy**: Render (Python runtime)
 
@@ -13,10 +13,19 @@ Aplicação moderna para divisão de despesas com interface React e backend Fast
 
 A aplicação segue uma arquitetura moderna com separação clara entre frontend e backend:
 
-- **Frontend React**: Interface moderna servida como Single Page Application (SPA)
-- **Backend FastAPI**: API REST para operações de dados
+- **Frontend React**: Single Page Application (SPA) servida pelo backend FastAPI
+- **Backend FastAPI**: API REST pura para operações de dados (sem templates)
 - **Banco de dados**: SQLAlchemy com suporte a SQLite/PostgreSQL
 - **Autenticação**: Sistema de sessões com middleware FastAPI
+- **Comunicação**: Frontend se conecta à API via HTTP requests
+
+## Como funciona
+
+1. **Backend FastAPI** serve a API REST em `/api/*` e a aplicação React em todas as outras rotas
+2. **Frontend React** é construído para produção e seus assets são servidos estaticamente
+3. **Autenticação** usa sessões HTTP mantidas via cookies
+4. **Estado da aplicação** é gerenciado no frontend React com Context API
+5. **API calls** são feitos via cliente HTTP customizado com interceptação de erros
 
 ## Executando localmente
 
@@ -60,7 +69,7 @@ cd ..
 ### 3. Executar a aplicação
 
 ```bash
-# Executar servidor FastAPI (serve tanto API quanto frontend React)
+# Executar servidor FastAPI (serve API e frontend React)
 uvicorn web_app:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -68,8 +77,8 @@ Acesse: http://localhost:8000
 
 ### Endpoints principais
 
-- **Frontend React**: `http://localhost:8000/` (redireciona para `/app`)
-- **API Health Check**: `http://localhost:8000/healthz`
+- **Aplicação React**: `http://localhost:8000/` (SPA principal)
+- **API Health Check**: `http://localhost:8000/api/healthz`
 - **API Endpoints**: `http://localhost:8000/api/*`
 
 ## Desenvolvimento
@@ -112,12 +121,6 @@ APP_NAME=DividaFácil
 DEBUG=true
 LOG_LEVEL=INFO
 
-# Diretórios
-TEMPLATES_DIR=templates
-STATIC_DIR=static
-LOCALES_DIR=locales
-DEFAULT_LOCALE=pt-BR
-
 # Banco de dados
 DATABASE_URL=sqlite:///./dividafacil.db
 
@@ -140,6 +143,8 @@ DividaFacil/
 │   │   ├── components/       # Componentes React
 │   │   │   ├── ui/          # Componentes UI (Radix UI)
 │   │   │   └── ...
+│   │   ├── services/        # API client e utilities
+│   │   ├── contexts/        # React contexts (Auth, etc.)
 │   │   ├── App.tsx          # Componente principal
 │   │   └── main.tsx         # Ponto de entrada
 │   ├── build/               # Build de produção (gerado)
@@ -151,12 +156,13 @@ DividaFacil/
 │   ├── routers/             # Rotas FastAPI
 │   ├── repositories/        # Acesso a dados
 │   ├── schemas/             # Schemas Pydantic
-│   └── settings.py          # Configurações
-├── templates/               # Templates Jinja2 (fallback)
-├── static/                  # Assets estáticos
+│   ├── auth.py              # Autenticação
+│   ├── database.py          # Configuração banco
+│   ├── settings.py          # Configurações
+│   └── logging_config.py    # Setup de logging
 ├── scripts/                 # Scripts utilitários
 ├── tests/                   # Testes
-├── web_app.py               # Aplicação FastAPI principal
+├── web_app.py               # Aplicação FastAPI principal (API + SPA serving)
 ├── main.py                  # CLI interface
 ├── requirements.txt         # Dependências Python
 └── README.md
@@ -173,7 +179,9 @@ DividaFacil/
 
 ### Backend API
 - **REST API**: Endpoints para usuários, grupos e despesas
-- **Autenticação**: Sistema de sessões
+- **API-only**: Sem templates ou renderização server-side
+- **SPA serving**: Serve aplicação React como assets estáticos
+- **Autenticação**: Sistema de sessões HTTP
 - **Validação**: Pydantic models
 - **Banco de dados**: SQLAlchemy ORM
 - **Internacionalização**: Suporte a português brasileiro

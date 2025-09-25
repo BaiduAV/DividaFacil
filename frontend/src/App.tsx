@@ -7,28 +7,12 @@ import { Installments } from "./components/installments";
 import { AddExpense } from "./components/add-expense";
 import { Login } from "./components/login";
 import { Toaster } from "./components/ui/sonner";
-
-interface User {
-  email: string;
-  name: string;
-}
+import { useAuth } from "./contexts/AuthContext";
 
 export default function App() {
+  const { user, isLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    setActiveTab("dashboard"); // Reset to dashboard on logout
-  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -71,11 +55,23 @@ export default function App() {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show login page if not authenticated
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <>
-        <Login onLogin={handleLogin} />
+        <Login />
         <Toaster />
       </>
     );
@@ -91,7 +87,7 @@ export default function App() {
           setIsSidebarCollapsed(!isSidebarCollapsed)
         }
         user={user}
-        onLogout={handleLogout}
+        onLogout={logout}
       />
 
       {/* Main Content */}

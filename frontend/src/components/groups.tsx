@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -17,83 +18,61 @@ import {
   DollarSign,
   Calendar,
 } from "lucide-react";
+import { apiClient, Group } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Groups() {
-  const groups = [
-    {
-      id: 1,
-      name: "Weekend Trip",
-      description: "Lake house getaway",
-      members: [
-        { name: "You", initials: "YU", isYou: true },
-        { name: "Sarah M.", initials: "SM" },
-        { name: "Mike L.", initials: "ML" },
-        { name: "Emma K.", initials: "EK" },
-      ],
-      totalSpent: 1250.0,
-      yourShare: 312.5,
-      yourBalance: -45.2,
-      lastActivity: "2 hours ago",
-      settled: false,
-      expenses: 8,
-    },
-    {
-      id: 2,
-      name: "Dinner Club",
-      description: "Monthly food adventures",
-      members: [
-        { name: "You", initials: "YU", isYou: true },
-        { name: "Alex P.", initials: "AP" },
-        { name: "Jenny W.", initials: "JW" },
-        { name: "Tom R.", initials: "TR" },
-        { name: "Lisa M.", initials: "LM" },
-        { name: "David K.", initials: "DK" },
-      ],
-      totalSpent: 684.5,
-      yourShare: 114.08,
-      yourBalance: 23.6,
-      lastActivity: "1 day ago",
-      settled: false,
-      expenses: 12,
-    },
-    {
-      id: 3,
-      name: "Office Lunch",
-      description: "Weekly team lunches",
-      members: [
-        { name: "You", initials: "YU", isYou: true },
-        { name: "John D.", initials: "JD" },
-        { name: "Susan L.", initials: "SL" },
-        { name: "Mark T.", initials: "MT" },
-        { name: "Rachel B.", initials: "RB" },
-        { name: "Kevin S.", initials: "KS" },
-        { name: "Amy C.", initials: "AC" },
-        { name: "Steve H.", initials: "SH" },
-      ],
-      totalSpent: 456.8,
-      yourShare: 57.1,
-      yourBalance: 12.3,
-      lastActivity: "3 days ago",
-      settled: false,
-      expenses: 6,
-    },
-    {
-      id: 4,
-      name: "Europe Trip 2024",
-      description: "Summer vacation expenses",
-      members: [
-        { name: "You", initials: "YU", isYou: true },
-        { name: "Sarah M.", initials: "SM" },
-        { name: "Mike L.", initials: "ML" },
-      ],
-      totalSpent: 3250.75,
-      yourShare: 1083.58,
-      yourBalance: 0.0,
-      lastActivity: "2 weeks ago",
-      settled: true,
-      expenses: 24,
-    },
-  ];
+  const { user } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  const loadGroups = async () => {
+    try {
+      setLoading(true);
+      const userGroups = await apiClient.getGroups();
+      setGroups(userGroups);
+    } catch (error) {
+      toast.error("Failed to load groups");
+      console.error("Groups error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) {
+      toast.error("Please enter a group name");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      await apiClient.createGroup({ name: newGroupName.trim() });
+      toast.success("Group created successfully!");
+      setNewGroupName("");
+      setShowCreateGroup(false);
+      loadGroups(); // Refresh the list
+    } catch (error) {
+      toast.error("Failed to create group");
+      console.error("Create group error:", error);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const filteredGroups = groups.filter(group =>
+    group.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -105,7 +84,10 @@ export function Groups() {
             Manage your expense groups
           </p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button 
+          className="w-full sm:w-auto"
+          onClick={() => setShowCreateGroup(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Create Group
         </Button>
@@ -117,12 +99,55 @@ export function Groups() {
         <Input
           placeholder="Search groups..."
           className="pl-10"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
+      {/* Create Group Form */}
+      {showCreateGroup && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Group</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateGroup} className="space-y-4">
+              <div>
+                <label htmlFor="groupName" className="text-sm font-medium">
+                  Group Name
+                </label>
+                <Input
+                  id="groupName"
+                  placeholder="Enter group name"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  disabled={creating}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={creating || !newGroupName.trim()}>
+                  {creating ? "Creating..." : "Create Group"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowCreateGroup(false);
+                    setNewGroupName("");
+                  }}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Groups Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {groups.map((group) => (
+        {filteredGroups.map((group) => (
           <Card
             key={group.id}
             className="hover:shadow-md transition-shadow cursor-pointer"
@@ -134,7 +159,7 @@ export function Groups() {
                     {group.name}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {group.description}
+                    {Object.keys(group.members).length} members
                   </p>
                 </div>
                 <Button
@@ -149,7 +174,7 @@ export function Groups() {
               {/* Members */}
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex -space-x-2">
-                  {group.members
+                  {Object.values(group.members)
                     .slice(0, 4)
                     .map((member, index) => (
                       <Avatar
@@ -157,20 +182,20 @@ export function Groups() {
                         className="w-6 h-6 border-2 border-background"
                       >
                         <AvatarFallback className="text-xs bg-primary/10">
-                          {member.initials}
+                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     ))}
-                  {group.members.length > 4 && (
+                  {Object.keys(group.members).length > 4 && (
                     <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                       <span className="text-xs font-medium">
-                        +{group.members.length - 4}
+                        +{Object.keys(group.members).length - 4}
                       </span>
                     </div>
                   )}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {group.members.length} members
+                  {Object.keys(group.members).length} members
                 </span>
               </div>
             </CardHeader>
@@ -183,55 +208,35 @@ export function Groups() {
                     Total Spent
                   </p>
                   <p className="font-bold">
-                    ${group.totalSpent.toFixed(2)}
+                    ${group.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    Your Share
+                    Your Balance
                   </p>
-                  <p className="font-bold">
-                    ${group.yourShare.toFixed(2)}
+                  <p className={`font-bold ${user && group.balances[user.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {user && group.balances[user.id] >= 0 ? '+' : ''}${user ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
                   </p>
                 </div>
               </div>
 
-              {/* Balance */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm font-medium">
-                  Your Balance:
-                </span>
-                <span
-                  className={`font-bold ${
-                    group.yourBalance > 0
-                      ? "text-green-600"
-                      : group.yourBalance < 0
-                        ? "text-red-600"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {group.yourBalance === 0
-                    ? "Settled"
-                    : `${group.yourBalance > 0 ? "+" : ""}$${Math.abs(group.yourBalance).toFixed(2)}`}
-                </span>
-              </div>
-
-              {/* Status and Activity */}
+              {/* Status */}
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={
-                      group.settled ? "secondary" : "outline"
+                      (user && group.balances[user.id] === 0) ? "secondary" : "outline"
                     }
                   >
-                    {group.settled ? "Settled" : "Active"}
+                    {(user && group.balances[user.id] === 0) ? "Settled" : "Active"}
                   </Badge>
                   <span className="text-muted-foreground">
-                    {group.expenses} expenses
+                    {group.expenses.length} expense{group.expenses.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <span className="text-muted-foreground">
-                  {group.lastActivity}
+                  {group.expenses.length > 0 ? 'Recent activity' : 'No expenses yet'}
                 </span>
               </div>
 

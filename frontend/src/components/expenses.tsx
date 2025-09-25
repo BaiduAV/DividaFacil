@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,88 +26,108 @@ import {
   DollarSign,
   MoreVertical,
 } from "lucide-react";
+import { apiClient, Expense, Group } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Expenses() {
-  const expenses = [
-    {
-      id: 1,
-      description: "Hotel Stay - Grand Plaza",
-      amount: 450.0,
-      category: "Accommodation",
-      paidBy: { name: "Sarah M.", initials: "SM" },
-      group: "Weekend Trip",
-      date: "2024-09-20",
-      timeAgo: "2 hours ago",
-      yourShare: 112.5,
-      participants: 4,
-      status: "unsettled",
-    },
-    {
-      id: 2,
-      description: "Dinner at Romano's",
-      amount: 89.5,
-      category: "Food & Drink",
-      paidBy: { name: "You", initials: "YU", isYou: true },
-      group: "Dinner Club",
-      date: "2024-09-19",
-      timeAgo: "1 day ago",
-      yourShare: 14.92,
-      participants: 6,
-      status: "settled",
-    },
-    {
-      id: 3,
-      description: "Uber to Airport",
-      amount: 24.8,
-      category: "Transportation",
-      paidBy: { name: "Mike L.", initials: "ML" },
-      group: "Weekend Trip",
-      date: "2024-09-18",
-      timeAgo: "2 days ago",
-      yourShare: 6.2,
-      participants: 4,
-      status: "unsettled",
-    },
-    {
-      id: 4,
-      description: "Groceries for BBQ",
-      amount: 156.3,
-      category: "Food & Drink",
-      paidBy: { name: "Emma K.", initials: "EK" },
-      group: "Weekend Trip",
-      date: "2024-09-17",
-      timeAgo: "3 days ago",
-      yourShare: 39.08,
-      participants: 4,
-      status: "unsettled",
-    },
-    {
-      id: 5,
-      description: "Gas for Road Trip",
-      amount: 78.45,
-      category: "Transportation",
-      paidBy: { name: "You", initials: "YU", isYou: true },
-      group: "Weekend Trip",
-      date: "2024-09-17",
-      timeAgo: "3 days ago",
-      yourShare: 19.61,
-      participants: 4,
-      status: "unsettled",
-    },
-    {
-      id: 6,
-      description: "Team Lunch - Pizza Palace",
-      amount: 94.2,
-      category: "Food & Drink",
-      paidBy: { name: "John D.", initials: "JD" },
-      group: "Office Lunch",
-      date: "2024-09-16",
-      timeAgo: "4 days ago",
-      yourShare: 11.78,
-      participants: 8,
-      status: "settled",
-    },
-  ];
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [expensesData, groupsData] = await Promise.all([
+        apiClient.getExpenses(),
+        apiClient.getGroups(),
+      ]);
+      setExpenses(expensesData);
+      setGroups(groupsData);
+    } catch (error) {
+      toast.error("Failed to load expenses");
+      console.error("Load expenses error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredExpenses = expenses.filter((expense) => {
+    const matchesSearch = expense.description
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesGroup = selectedGroup === "all" || getExpenseGroup(expense)?.id === selectedGroup;
+    const matchesCategory = selectedCategory === "all";
+    return matchesSearch && matchesGroup && matchesCategory;
+  });
+
+  const getExpenseGroup = (expense: Expense) => {
+    // Find which group this expense belongs to
+    return groups.find(group => 
+      group.expenses?.some(e => e.id === expense.id)
+    );
+  };
+
+  const getExpensePayer = (expense: Expense) => {
+    const group = getExpenseGroup(expense);
+    if (!group) return null;
+    
+    const payer = Object.values(group.members).find(member => member.id === expense.paid_by);
+    return payer || null;
+  };
+
+  const getYourShare = (expense: Expense) => {
+    if (!user) return 0;
+    
+    const group = getExpenseGroup(expense);
+    if (!group) return 0;
+    
+    // Calculate share based on split type
+    if (expense.split_type === 'EQUAL') {
+      return expense.amount / expense.split_among.length;
+    } else if (expense.split_values && expense.split_among.includes(user.id)) {
+      const userIndex = expense.split_among.indexOf(user.id);
+      if (expense.split_type === 'EXACT') {
+        return expense.split_values[userIndex];
+      } else if (expense.split_type === 'PERCENTAGE') {
+        return (expense.amount * expense.split_values[userIndex]) / 100;
+      }
+    }
+    
+    return 0;
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    const diffInDays = diffInHours / 24;
+    
+    if (diffInHours < 1) {
+      return `${Math.floor(diffInMs / (1000 * 60))} minutes ago`;
+    } else if (diffInDays < 1) {
+      return `${Math.floor(diffInHours)} hours ago`;
+    } else if (diffInDays < 7) {
+      return `${Math.floor(diffInDays)} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const getExpenseStatus = (expense: Expense) => {
+    // For now, assume all expenses are unsettled
+    // TODO: Add settlement logic when available in API
+    return "unsettled";
+  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -163,23 +184,24 @@ export function Expenses() {
               <Input
                 placeholder="Search expenses..."
                 className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select>
+            <Select
+              value={selectedGroup}
+              onValueChange={setSelectedGroup}
+            >
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="All Groups" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Groups</SelectItem>
-                <SelectItem value="weekend-trip">
-                  Weekend Trip
-                </SelectItem>
-                <SelectItem value="dinner-club">
-                  Dinner Club
-                </SelectItem>
-                <SelectItem value="office-lunch">
-                  Office Lunch
-                </SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select>
@@ -213,117 +235,117 @@ export function Expenses() {
 
       {/* Expenses List */}
       <div className="space-y-4">
-        {expenses.map((expense) => (
-          <Card
-            key={expense.id}
-            className="hover:shadow-md transition-shadow"
-          >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  {/* Category Icon */}
-                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-lg">
-                    {getCategoryIcon(expense.category)}
+        {filteredExpenses.map((expense) => {
+          const group = getExpenseGroup(expense);
+          const payer = getExpensePayer(expense);
+          const yourShare = getYourShare(expense);
+          const timeAgo = getTimeAgo(expense.created_at);
+          const status = getExpenseStatus(expense);
+          
+          return (
+            <Card
+              key={expense.id}
+              className="hover:shadow-md transition-shadow"
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Category Icon - Default for now since category not in API */}
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-lg">
+                      💰
+                    </div>
+
+                    {/* Expense Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium truncate">
+                          {expense.description}
+                        </h3>
+                        <Badge className="text-xs bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300">
+                          General
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {group?.name || "Unknown Group"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {timeAgo}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {payer && (
+                          <Avatar className="w-6 h-6">
+                            <AvatarFallback className="text-xs">
+                              {payer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <span className="text-sm text-muted-foreground">
+                          Paid by{" "}
+                          {payer?.id === user?.id
+                            ? "You"
+                            : payer?.name || "Unknown"}
+                        </span>
+                        <Badge
+                          variant={status === "settled" ? "secondary" : "outline"}
+                          className="text-xs"
+                        >
+                          {status === "settled" ? "Settled" : "Unsettled"}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Expense Details */}
-                  <div className="flex-1 min-w-0">
+                  {/* Amount and Actions */}
+                  <div className="text-right">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium truncate">
-                        {expense.description}
-                      </h3>
-                      <Badge
-                        className={`text-xs ${getCategoryColor(expense.category)}`}
+                      <div className="text-right">
+                        <p className="font-bold text-lg">
+                          ${expense.amount.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Your share: ${yourShare.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 h-auto"
                       >
-                        {expense.category}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {expense.group}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {expense.timeAgo}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarFallback className="text-xs">
-                          {expense.paidBy.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-muted-foreground">
-                        Paid by{" "}
-                        {expense.paidBy.isYou
-                          ? "You"
-                          : expense.paidBy.name}
-                      </span>
-                      <Badge
-                        variant={
-                          expense.status === "settled"
-                            ? "secondary"
-                            : "outline"
-                        }
-                        className="text-xs"
-                      >
-                        {expense.status === "settled"
-                          ? "Settled"
-                          : "Unsettled"}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Amount and Actions */}
-                <div className="text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="text-right">
-                      <p className="font-bold text-lg">
-                        ${expense.amount.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Your share: $
-                        {expense.yourShare.toFixed(2)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-1 h-auto"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Split Details */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Split equally among {expense.participants}{" "}
-                    people
-                  </span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Edit Split
-                    </Button>
-                    {expense.status === "unsettled" && (
-                      <Button size="sm">
-                        <DollarSign className="w-3 h-3 mr-1" />
-                        Settle
+                        <MoreVertical className="w-4 h-4" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+
+                {/* Split Details */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Split {expense.split_type.toLowerCase()} among {expense.split_among.length} people
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        Edit Split
+                      </Button>
+                      {status === "unsettled" && (
+                        <Button size="sm">
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          Settle
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Empty State */}

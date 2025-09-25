@@ -6,13 +6,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { ThemeToggle } from "./theme-toggle";
 import { Receipt, Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
-interface LoginProps {
-  onLogin: (userData: { email: string; name: string }) => void;
-}
-
-export function Login({ onLogin }: LoginProps) {
+export function Login() {
+  const { login, signup } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,21 +34,20 @@ export function Login({ onLogin }: LoginProps) {
     setIsLoading(true);
 
     // Basic validation
-    if (!loginData.email || !loginData.password) {
-      toast.error("Please fill in all fields");
+    if (!loginData.email) {
+      toast.error("Please enter your email");
       setIsLoading(false);
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await login(loginData.email);
       toast.success("Welcome back to DividaFacil!");
-      onLogin({
-        email: loginData.email,
-        name: "John Doe", // Mock name
-      });
+    } catch (error) {
+      toast.error("Login failed. Please check your email.");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -76,15 +73,14 @@ export function Login({ onLogin }: LoginProps) {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signup(signupData.name, signupData.email);
       toast.success("Account created successfully!");
-      onLogin({
-        email: signupData.email,
-        name: signupData.name,
-      });
+    } catch (error) {
+      toast.error("Signup failed. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleForgotPassword = () => {

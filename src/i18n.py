@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 
 class I18nService:
-    """Simple internationalization service for template translations."""
+    """Simple internationalization service for translations."""
 
     def __init__(self, locales_dir: str = "locales", default_locale: str = "pt-BR"):
         self.locales_dir = Path(locales_dir)

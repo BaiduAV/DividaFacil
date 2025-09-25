@@ -15,7 +15,6 @@ class Settings:
         "SESSION_SECRET_KEY", "your-secret-key-change-in-production"
     )
 
-    TEMPLATES_DIR: str = os.getenv("TEMPLATES_DIR", "templates")
     STATIC_DIR: str = os.getenv("STATIC_DIR", "static")
     LOCALES_DIR: str = os.getenv("LOCALES_DIR", "locales")
     DEFAULT_LOCALE: str = os.getenv("DEFAULT_LOCALE", "pt-BR")
