@@ -1,56 +1,192 @@
 # DividaFácil Web
 
-Pequena aplicação FastAPI + Jinja para divisão de despesas.
+Aplicação moderna para divisão de despesas com interface React e backend FastAPI.
 
 ## Visão geral
 
-- Backend: FastAPI + Uvicorn
-- Templates: Jinja2 + Tailwind utility classes
-- Banco: SQLite (dev) ou PostgreSQL (produção) via `DATABASE_URL`
-- Container: Dockerfile pronto
+- **Frontend**: React + Vite + Tailwind CSS + Radix UI
+- **Backend**: FastAPI + Uvicorn
+- **Banco**: SQLite (desenvolvimento) ou PostgreSQL (produção) via `DATABASE_URL`
+- **Deploy**: Render (Python runtime)
+
+## Arquitetura
+
+A aplicação segue uma arquitetura moderna com separação clara entre frontend e backend:
+
+- **Frontend React**: Interface moderna servida como Single Page Application (SPA)
+- **Backend FastAPI**: API REST para operações de dados
+- **Banco de dados**: SQLAlchemy com suporte a SQLite/PostgreSQL
+- **Autenticação**: Sistema de sessões com middleware FastAPI
 
 ## Executando localmente
 
-Pré-requisitos: Python 3.13, pip, virtualenv.
+### Pré-requisitos
+
+- Python 3.12+ (recomendado 3.13)
+- Node.js 18+ e npm
+- Git
+
+### 1. Clonagem e setup do backend
 
 ```bash
+git clone <seu-repositorio>
+cd DividaFacil
+
+# Criar ambiente virtual
 python -m venv .venv
-. .venv/Scripts/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# Linux/Mac:
+source .venv/bin/activate
+
+# Instalar dependências Python
 pip install -r requirements.txt
-uvicorn web_app:app --reload
 ```
 
-Acesse http://localhost:8000
-
-### Variáveis de ambiente (local)
-
-Você pode copiar `.env.example` para `.env` e ajustar valores:
-
-- `APP_NAME` (default: DividaFacil)
-- `DEBUG` (default: false)
-- `LOG_LEVEL` (default: INFO)
-- `TEMPLATES_DIR` (default: templates)
-- `STATIC_DIR` (default: static)
-- `DATABASE_URL`
-  - Ex.: `sqlite:///./dividafacil.db` (padrão dev)
-  - Ex.: `postgres://USER:PASS@HOST:PORT/DBNAME` (produção; o app normaliza para `postgresql+psycopg2`)
-
-## Testes
+### 2. Setup do frontend
 
 ```bash
+# Instalar dependências Node.js
+cd frontend
+npm install
+
+# Construir aplicação React para produção
+npm run build
+
+# Voltar para raiz do projeto
+cd ..
+```
+
+### 3. Executar a aplicação
+
+```bash
+# Executar servidor FastAPI (serve tanto API quanto frontend React)
+uvicorn web_app:app --reload --host 127.0.0.1 --port 8000
+```
+
+Acesse: http://localhost:8000
+
+### Endpoints principais
+
+- **Frontend React**: `http://localhost:8000/` (redireciona para `/app`)
+- **API Health Check**: `http://localhost:8000/healthz`
+- **API Endpoints**: `http://localhost:8000/api/*`
+
+## Desenvolvimento
+
+### Desenvolvimento com hot-reload
+
+Para desenvolvimento com recarregamento automático:
+
+```bash
+# Terminal 1: Backend FastAPI
+uvicorn web_app:app --reload --host 127.0.0.1 --port 8000
+
+# Terminal 2: Frontend React (desenvolvimento)
+cd frontend
+npm run dev
+```
+
+O frontend de desenvolvimento roda em `http://localhost:3000` e faz proxy para a API em `http://localhost:8000`.
+
+### Executando testes
+
+```bash
+# Testes Python
 pytest -q
+
+# Criar dados de teste
+python create_test_data.py
+
+# Executar notificações (teste)
+python scripts/notifications.py overdue --report-only
 ```
 
-## Docker
+### Variáveis de ambiente
+
+Você pode configurar variáveis de ambiente em um arquivo `.env`:
 
 ```bash
-docker build -t splitwise-web .
-docker run -p 8000:8000 --env LOG_LEVEL=INFO splitwise-web
+# Aplicação
+APP_NAME=DividaFácil
+DEBUG=true
+LOG_LEVEL=INFO
+
+# Diretórios
+TEMPLATES_DIR=templates
+STATIC_DIR=static
+LOCALES_DIR=locales
+DEFAULT_LOCALE=pt-BR
+
+# Banco de dados
+DATABASE_URL=sqlite:///./dividafacil.db
+
+# Sessão
+SESSION_SECRET_KEY=your-secret-key-change-in-production
+
+# Email (opcional)
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
 ```
 
-## Configuração
+## Estrutura do projeto
 
-Variáveis de ambiente suportadas (veja `src/settings.py`):
+```
+DividaFacil/
+├── frontend/                 # Aplicação React
+│   ├── src/
+│   │   ├── components/       # Componentes React
+│   │   │   ├── ui/          # Componentes UI (Radix UI)
+│   │   │   └── ...
+│   │   ├── App.tsx          # Componente principal
+│   │   └── main.tsx         # Ponto de entrada
+│   ├── build/               # Build de produção (gerado)
+│   ├── package.json
+│   └── vite.config.ts       # Configuração Vite
+├── src/                     # Código Python backend
+│   ├── models/              # Modelos de dados
+│   ├── services/            # Lógica de negócio
+│   ├── routers/             # Rotas FastAPI
+│   ├── repositories/        # Acesso a dados
+│   ├── schemas/             # Schemas Pydantic
+│   └── settings.py          # Configurações
+├── templates/               # Templates Jinja2 (fallback)
+├── static/                  # Assets estáticos
+├── scripts/                 # Scripts utilitários
+├── tests/                   # Testes
+├── web_app.py               # Aplicação FastAPI principal
+├── main.py                  # CLI interface
+├── requirements.txt         # Dependências Python
+└── README.md
+```
+
+## Funcionalidades
+
+### Frontend React
+- **Interface moderna**: Design responsivo com Tailwind CSS
+- **Componentes UI**: Radix UI para acessibilidade
+- **Navegação SPA**: Roteamento client-side
+- **Formulários**: Validação com React Hook Form
+- **Notificações**: Sistema de toast com Sonner
+
+### Backend API
+- **REST API**: Endpoints para usuários, grupos e despesas
+- **Autenticação**: Sistema de sessões
+- **Validação**: Pydantic models
+- **Banco de dados**: SQLAlchemy ORM
+- **Internacionalização**: Suporte a português brasileiro
+
+### Recursos principais
+- ✅ Gerenciamento de usuários
+- ✅ Criação de grupos
+- ✅ Divisão de despesas (igual, exata, porcentagem)
+- ✅ Parcelamento de despesas
+- ✅ Cálculo automático de saldos
+- ✅ Sistema de notificações
+- ✅ Interface web moderna
+- ✅ CLI para operações avançadas
 
 - `APP_NAME` (default: DividaFácil)
 - `DEBUG` (default: false)
@@ -71,47 +207,96 @@ Variáveis de ambiente suportadas (veja `src/settings.py`):
 - `static/`: assets estáticos
 - `tests/`: suite de testes
 
-## Segurança e produção
-
-- Ativar proxies/servidor de aplicação (Gunicorn/Uvicorn workers) quando necessário
-- Adicionar cabeçalhos de segurança (CSP, HSTS) e TLS no reverso (Nginx ou provedor)
-- Implementar autenticação/autorização (não implementado)
-- Usar banco de dados real via repositórios (a implementar)
-
----
-
 ## Deploy para produção (GitHub + Render)
 
-O repositório já contém um `Dockerfile`. No Render, basta criar um serviço web usando o repositório GitHub.
+A aplicação está configurada para deploy usando **Python runtime** no Render, com build automático do frontend React.
 
-### Opção A) Blueprint (IaC com `render.yaml`)
-
-Automatiza a criação do Web Service e do PostgreSQL via código.
-
-1. Suba o projeto ao GitHub
-2. No Render: New → Blueprint → selecione o repositório
-3. Confirme o plano/região (defaults no `render.yaml`: `free`/`oregon`)
-4. Deploy
-
-Detalhes do `render.yaml`:
-- Serviço web `dividafacil-web` (Docker) com health check em `/healthz`
-- Banco `dividafacil-db` (PostgreSQL)
-- `DATABASE_URL` do serviço web é mapeado do DB com `connectionString`
-
-### 1) Subir para o GitHub
+### 1. Preparar o projeto
 
 ```bash
-git init
+# Construir frontend para produção
+cd frontend
+npm install
+npm run build
+cd ..
+
+# Commit das mudanças
 git add .
-git commit -m "Initial production-ready setup"
-git branch -M main
-git remote add origin https://github.com/<seu-usuario>/<seu-repo>.git
-git push -u origin main
+git commit -m "Update production build"
+git push origin main
 ```
 
-### Opção B) Criar serviço no Render (via Docker) manualmente
+### 2. Deploy no Render
 
-1. Acesse o Render e crie um novo Web Service
+#### Opção A) Usando render.yaml (Recomendado)
+
+O `render.yaml` automatiza a criação dos serviços:
+
+1. **Suba o projeto ao GitHub**
+2. **No Render**: New → Blueprint → selecione o repositório
+3. **Confirme** o plano/região (Python runtime, região Oregon)
+4. **Deploy**
+
+O `render.yaml` cria:
+- **Web Service**: Aplicação Python com build automático
+- **PostgreSQL**: Banco de dados para produção
+- **Health check**: Endpoint `/healthz`
+
+#### Opção B) Criação manual
+
+1. **Crie um Web Service** no Render
+2. **Conecte** ao repositório GitHub
+3. **Configure**:
+   - **Runtime**: Python 3
+   - **Build Command**: `cd frontend && npm install && npm run build && cd ..`
+   - **Start Command**: `uvicorn web_app:app --host 0.0.0.0 --port 10000`
+   - **Região**: Oregon (ou a mais próxima)
+   - **Plano**: Gratuito para testes
+
+4. **Variáveis de ambiente**:
+   ```
+   DATABASE_URL=postgres://... (do banco PostgreSQL)
+   LOG_LEVEL=INFO
+   APP_NAME=DividaFácil
+   SESSION_SECRET_KEY=your-production-secret
+   ```
+
+### 3. Banco de dados PostgreSQL
+
+1. **Crie um PostgreSQL** no Render
+2. **Copie** o `External Connection String`
+3. **Configure** `DATABASE_URL` no web service
+
+### 4. Build automático
+
+O Render executa automaticamente:
+```bash
+# Build do frontend
+cd frontend
+npm install
+npm run build
+
+# Setup Python
+pip install -r requirements.txt
+
+# Start da aplicação
+uvicorn web_app:app --host 0.0.0.0 --port 10000
+```
+
+### 5. Verificação do deploy
+
+- **Health check**: `GET /healthz` retorna `{"status": "ok"}`
+- **Frontend**: Acesse a URL do Render - deve carregar a interface React
+- **API**: Endpoints disponíveis em `/api/*`
+
+## Segurança e produção
+
+- ✅ **Autenticação**: Sistema de sessões implementado
+- ✅ **Banco PostgreSQL**: Produção com SQLAlchemy
+- ✅ **Build seguro**: Frontend construído em produção
+- ✅ **Health checks**: Monitoramento automático
+- ⚠️  **HTTPS**: Configurado automaticamente pelo Render
+- ⚠️  **Cabeçalhos de segurança**: Recomendado adicionar CSP no futuro
 2. Conecte ao repositório GitHub
 3. Render detectará o `Dockerfile` automaticamente
 4. Configure:
@@ -150,7 +335,93 @@ uvicorn web_app:app --host 0.0.0.0 --port 8000
 
 ## Troubleshooting
 
-- Erro de conexão com banco em produção: verifique `DATABASE_URL` e se o serviço PostgreSQL está acessível.
-- Porta incorreta: mantenha `--port 8000` no container; o Render faz o mapeamento externo.
-- Estáticos/templates: os defaults (`templates/`, `static/`) já estão incluídos na imagem.
- - Health check: o endpoint `GET /healthz` retorna `{ "status": "ok" }`. Configure-o no Render como health check se desejar.
+### Problemas comuns no desenvolvimento
+
+**Frontend não carrega (blank page)**
+```bash
+# Reconstruir frontend
+cd frontend
+rm -rf build
+npm install
+npm run build
+cd ..
+# Reiniciar servidor
+uvicorn web_app:app --reload
+```
+
+**Assets não carregam**
+- Verifique se `frontend/build/` existe e contém `index.html` e `assets/`
+- Confirme que `vite.config.ts` tem `base: '/app/'`
+- Verifique logs do servidor para erros 404 em assets
+
+**API não responde**
+```bash
+# Testar health check
+curl http://localhost:8000/healthz
+# Deve retornar: {"status": "ok"}
+```
+
+**Erro de banco de dados**
+```bash
+# Resetar banco SQLite (desenvolvimento)
+rm dividafacil.db
+python -c "from src.database import create_tables; create_tables()"
+```
+
+### Problemas no deploy Render
+
+**Build falha**
+- Verifique se `package.json` tem as dependências corretas
+- Confirme que `vite.config.ts` está configurado para produção
+- Verifique logs do build no Render
+
+**Aplicação não inicia**
+- Porta incorreta: Render usa porta 10000 por padrão
+- `DATABASE_URL` não configurada para PostgreSQL
+- `SESSION_SECRET_KEY` não definida
+
+**Frontend não carrega em produção**
+- Verifique se o build do frontend foi executado
+- Confirme que `frontend/build/` foi criado
+- Verifique se assets estão sendo servidos de `/app/assets/`
+
+### Interface CLI
+
+A aplicação também oferece uma interface de linha de comando para operações avançadas:
+
+```bash
+# Executar interface interativa
+python main.py
+
+# Sistema de notificações
+python scripts/notifications.py overdue --report-only
+python scripts/notifications.py upcoming --report-only
+
+# Criar dados de teste
+python create_test_data.py
+```
+
+### Desenvolvimento avançado
+
+**Hot reload para desenvolvimento**
+```bash
+# Backend
+uvicorn web_app:app --reload --host 127.0.0.1 --port 8000
+
+# Frontend (terminal separado)
+cd frontend
+npm run dev  # Roda em http://localhost:3000
+```
+
+**Debugging**
+```bash
+# Logs detalhados
+LOG_LEVEL=DEBUG uvicorn web_app:app --reload
+
+# Testes com coverage
+pytest --cov=src --cov-report=html
+```
+
+**Internacionalização**
+- Arquivos de tradução: `locales/pt-BR.json`, `locales/en.json`
+- Locale padrão: `pt-BR` (configurável via `DEFAULT_LOCALE`)
