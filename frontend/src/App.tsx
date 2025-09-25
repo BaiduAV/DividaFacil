@@ -13,13 +13,35 @@ export default function App() {
   const { user, isLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [openCreateGroupModal, setOpenCreateGroupModal] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  const handleNavigateToGroups = (tab: string, openModal = false) => {
+    setActiveTab(tab);
+    if (tab === "groups" && openModal) {
+      setOpenCreateGroupModal(true);
+    }
+  };
+
+  const handleNavigate = (tab: string, groupId?: string) => {
+    setActiveTab(tab);
+    if (groupId) {
+      setSelectedGroupId(groupId);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <Dashboard />;
+        return <Dashboard onNavigate={handleNavigateToGroups} />;
       case "groups":
-        return <Groups />;
+        return (
+          <Groups 
+            openCreateModal={openCreateGroupModal}
+            onCreateModalClose={() => setOpenCreateGroupModal(false)}
+            onNavigate={handleNavigate}
+          />
+        );
       case "expenses":
         return <Expenses />;
       case "installments":
@@ -28,6 +50,7 @@ export default function App() {
         return (
           <AddExpense
             onBack={() => setActiveTab("dashboard")}
+            groupId={selectedGroupId || undefined}
           />
         );
       case "reports":

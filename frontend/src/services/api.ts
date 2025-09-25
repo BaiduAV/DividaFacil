@@ -105,7 +105,7 @@ class ApiClient {
   }
 
   // Group endpoints
-  async createGroup(groupData: { name: string }): Promise<Group> {
+  async createGroup(groupData: { name: string; member_ids?: string[]; member_emails?: string[] }): Promise<Group> {
     return this.request('/groups', {
       method: 'POST',
       body: JSON.stringify(groupData),
@@ -170,7 +170,7 @@ export interface User {
 export interface Group {
   id: string;
   name: string;
-  members: User[];
+  members: Record<string, User>; // Dictionary with user_id as key
   expenses: Expense[];
   balances: Record<string, number>;
 }

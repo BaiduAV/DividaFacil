@@ -37,9 +37,10 @@ import { toast } from "sonner";
 
 interface AddExpenseProps {
   onBack: () => void;
+  groupId?: string;
 }
 
-export function AddExpense({ onBack }: AddExpenseProps) {
+export function AddExpense({ onBack, groupId }: AddExpenseProps) {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,16 @@ export function AddExpense({ onBack }: AddExpenseProps) {
   useEffect(() => {
     loadGroups();
   }, []);
+
+  useEffect(() => {
+    // Set initial group if groupId is provided
+    if (groupId && groups.length > 0) {
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        setSelectedGroup(groupId);
+      }
+    }
+  }, [groupId, groups]);
 
   useEffect(() => {
     // Set default payer to current user

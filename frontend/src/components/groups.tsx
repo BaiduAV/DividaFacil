@@ -10,6 +10,14 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "./ui/dropdown-menu";
 import {
   Users,
   Plus,
@@ -17,23 +25,66 @@ import {
   MoreVertical,
   DollarSign,
   Calendar,
+  Edit,
+  Trash,
+  UserPlus,
+  Settings,
+  X,
+  Receipt,
 } from "lucide-react";
-import { apiClient, Group } from "../services/api";
+import { apiClient, Group, User } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
-export function Groups() {
+interface GroupsProps {
+  openCreateModal?: boolean;
+  onCreateModalClose?: () => void;
+  onNavigate?: (tab: string, groupId?: string) => void;
+}
+
+export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate }: GroupsProps) {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(openCreateModal);
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [showGroupDetails, setShowGroupDetails] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+
+  // Helper function to convert members dictionary to array
+  const getMembersArray = (members: Record<string, User>): User[] => {
+    return Object.values(members || {});
+  };
 
   useEffect(() => {
     loadGroups();
+    loadUsers();
   }, []);
+
+  const loadUsers = async () => {
+    try {
+      // Get the current user - for now, this is the only user available due to privacy constraints
+      const users = await apiClient.getCurrentUser();
+      setAvailableUsers(users);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+      // Fallback to empty array
+      setAvailableUsers([]);
+    }
+  };
+
+  useEffect(() => {
+    if (openCreateModal) {
+      setShowCreateGroup(true);
+      setSelectedUsers([]); // Reset selected users when opening modal
+    }
+  }, [openCreateModal]);
 
   const loadGroups = async () => {
     try {
@@ -48,6 +99,24 @@ export function Groups() {
     }
   };
 
+  const handleAddMemberEmail = () => {
+    const email = newMemberEmail.trim();
+    if (email && !memberEmails.includes(email) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMemberEmails([...memberEmails, email]);
+      setNewMemberEmail("");
+    } else if (!email) {
+      toast.error("Please enter an email address");
+    } else if (memberEmails.includes(email)) {
+      toast.error("Email already added");
+    } else {
+      toast.error("Please enter a valid email address");
+    }
+  };
+
+  const handleRemoveMemberEmail = (emailToRemove: string) => {
+    setMemberEmails(memberEmails.filter(email => email !== emailToRemove));
+  };
+
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim()) {
@@ -57,10 +126,21 @@ export function Groups() {
 
     try {
       setCreating(true);
-      await apiClient.createGroup({ name: newGroupName.trim() });
+      const memberIds = selectedUsers.map(user => user.id);
+      await apiClient.createGroup({ 
+        name: newGroupName.trim(),
+        member_ids: memberIds,
+        member_emails: memberEmails
+      });
       toast.success("Group created successfully!");
       setNewGroupName("");
+      setSelectedUsers([]);
+      setMemberEmails([]);
+      setNewMemberEmail("");
       setShowCreateGroup(false);
+      if (onCreateModalClose) {
+        onCreateModalClose();
+      }
       loadGroups(); // Refresh the list
     } catch (error) {
       toast.error("Failed to create group");
@@ -68,6 +148,30 @@ export function Groups() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleViewGroupDetails = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group) {
+      setSelectedGroup(group);
+      setShowGroupDetails(true);
+    }
+  };
+
+  const handleEditGroup = (groupId: string) => {
+    toast.info(`Edit group ${groupId} - Coming soon!`);
+  };
+
+  const handleAddMembers = (groupId: string) => {
+    toast.info(`Add members to group ${groupId} - Coming soon!`);
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    toast.error(`Delete group ${groupId} - Coming soon!`);
+  };
+
+  const handleGroupSettings = (groupId: string) => {
+    toast.info(`Group settings for ${groupId} - Coming soon!`);
   };
 
   const filteredGroups = groups.filter(group =>
@@ -84,13 +188,13 @@ export function Groups() {
             Manage your expense groups
           </p>
         </div>
-        <Button 
-          className="w-full sm:w-auto"
-          onClick={() => setShowCreateGroup(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Group
-        </Button>
+                  <Button
+            onClick={() => setShowCreateGroup(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create Group
+          </Button>
       </div>
 
       {/* Search */}
@@ -103,47 +207,6 @@ export function Groups() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-
-      {/* Create Group Form */}
-      {showCreateGroup && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Group</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateGroup} className="space-y-4">
-              <div>
-                <label htmlFor="groupName" className="text-sm font-medium">
-                  Group Name
-                </label>
-                <Input
-                  id="groupName"
-                  placeholder="Enter group name"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  disabled={creating}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={creating || !newGroupName.trim()}>
-                  {creating ? "Creating..." : "Create Group"}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowCreateGroup(false);
-                    setNewGroupName("");
-                  }}
-                  disabled={creating}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Groups Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -159,43 +222,69 @@ export function Groups() {
                     {group.name}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {Object.keys(group.members).length} members
+                    {getMembersArray(group.members).length} members
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-auto"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-1 h-auto"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => handleViewGroupDetails(group.id)}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditGroup(group.id)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Group
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAddMembers(group.id)}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add Members
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => handleDeleteGroup(group.id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash className="w-4 h-4 mr-2" />
+                      Delete Group
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Members */}
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex -space-x-2">
-                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {}))
+                  {getMembersArray(group.members)
                     .slice(0, 4)
-                    .map((member: any, index) => (
+                    .map((member, index) => (
                       <Avatar
-                        key={index}
+                        key={member.id || index}
                         className="w-6 h-6 border-2 border-background"
                       >
                         <AvatarFallback className="text-xs bg-primary/10">
-                          {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                          {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
                     ))}
-                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length > 4 && (
+                  {getMembersArray(group.members).length > 4 && (
                     <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                       <span className="text-xs font-medium">
-                        +{(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length - 4}
+                        +{getMembersArray(group.members).length - 4}
                       </span>
                     </div>
                   )}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length} members
+                  {getMembersArray(group.members).length} members
                 </span>
               </div>
             </CardHeader>
@@ -242,11 +331,19 @@ export function Groups() {
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2 pt-2">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onNavigate && onNavigate("add-expense", group.id)}
+                >
                   <DollarSign className="w-4 h-4 mr-1" />
                   Add Expense
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleViewGroupDetails(group.id)}
+                >
                   View Details
                 </Button>
               </div>
@@ -267,12 +364,327 @@ export function Groups() {
               Create your first group to start splitting
               expenses with friends
             </p>
-            <Button>
+            <Button onClick={() => setShowCreateGroup(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create Your First Group
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Create Group Modal */}
+      {showCreateGroup && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateGroup(false);
+              setNewGroupName("");
+              setSelectedUsers([]);
+              if (onCreateModalClose) {
+                onCreateModalClose();
+              }
+            }
+          }}
+        >
+          <div 
+            className="rounded-lg shadow-lg p-6 w-full max-w-md mx-4 bg-card text-card-foreground border border-border"
+          >
+            <h2 className="text-xl font-semibold mb-2">
+              Create New Group
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Create a new group to split expenses with friends and family.
+            </p>
+            
+            <form onSubmit={handleCreateGroup}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter group name..."
+                  autoFocus
+                  disabled={creating}
+                  className="w-full px-3 py-2 rounded-md bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                />
+              </div>
+
+              {/* User Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Add Members (Optional)
+                </label>
+                <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-muted">
+                  {availableUsers.length > 0 ? (
+                    availableUsers.map((availableUser) => (
+                      <label 
+                        key={availableUser.id} 
+                        className="flex items-center p-2 cursor-pointer hover:bg-card transition-colors border-b border-border last:border-b-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.some(u => u.id === availableUser.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUsers([...selectedUsers, availableUser]);
+                            } else {
+                              setSelectedUsers(selectedUsers.filter(u => u.id !== availableUser.id));
+                            }
+                          }}
+                          disabled={creating}
+                          className="mr-2 accent-primary"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-foreground">
+                            {availableUser.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {availableUser.email}
+                          </div>
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="p-3 text-sm text-center text-muted-foreground">
+                      No users available
+                    </div>
+                  )}
+                </div>
+                {selectedUsers.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Selected members ({selectedUsers.length}):
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedUsers.map((selectedUser) => (
+                        <span 
+                          key={selectedUser.id}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
+                        >
+                          {selectedUser.name}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedUsers(selectedUsers.filter(u => u.id !== selectedUser.id))}
+                            disabled={creating}
+                            className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Email-based Member Addition */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Add Members by Email
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="email"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    placeholder="Enter email address..."
+                    disabled={creating}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddMemberEmail();
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 rounded-md bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddMemberEmail}
+                    disabled={creating || !newMemberEmail.trim()}
+                    className="px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+                {memberEmails.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Member emails ({memberEmails.length}):
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {memberEmails.map((email, index) => (
+                        <span 
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary/10 text-secondary-foreground"
+                        >
+                          {email}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMemberEmail(email)}
+                            disabled={creating}
+                            className="ml-1 text-secondary-foreground hover:text-secondary-foreground/80 disabled:opacity-50"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateGroup(false);
+                    setNewGroupName("");
+                    setSelectedUsers([]);
+                    setMemberEmails([]);
+                    setNewMemberEmail("");
+                    if (onCreateModalClose) {
+                      onCreateModalClose();
+                    }
+                  }}
+                  disabled={creating}
+                  className="px-4 py-2 rounded-md bg-background text-foreground border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={creating || !newGroupName.trim()}
+                  className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {creating ? "Creating..." : "Create Group"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Group Details Modal */}
+      {showGroupDetails && selectedGroup && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowGroupDetails(false);
+              setSelectedGroup(null);
+            }
+          }}
+        >
+          <div 
+            className="rounded-lg shadow-lg w-full max-w-2xl mx-4 bg-card text-card-foreground border border-border max-h-[90vh] overflow-y-auto"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h2 className="text-xl font-semibold">{selectedGroup.name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {getMembersArray(selectedGroup.members).length} members • {selectedGroup.expenses.length} expenses
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowGroupDetails(false);
+                  setSelectedGroup(null);
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Members Section */}
+              <div>
+                <h3 className="text-lg font-medium mb-4">Members</h3>
+                <div className="space-y-3">
+                  {getMembersArray(selectedGroup.members).map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="bg-primary/10">
+                            {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{member.name}</p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-medium ${selectedGroup.balances[member.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {selectedGroup.balances[member.id] >= 0 ? '+' : ''}${Math.abs(selectedGroup.balances[member.id] || 0).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedGroup.balances[member.id] >= 0 ? 'owed' : 'owes'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Expenses Section */}
+              <div>
+                <h3 className="text-lg font-medium mb-4">Recent Expenses</h3>
+                {selectedGroup.expenses.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedGroup.expenses.slice(0, 5).map((expense) => (
+                      <div key={expense.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{expense.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Paid by {getMembersArray(selectedGroup.members).find((m: User) => m.id === expense.paid_by)?.name || 'Unknown'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">${expense.amount.toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {expense.split_type.toLowerCase()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No expenses yet</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Button 
+                  onClick={() => onNavigate && onNavigate("add-expense", selectedGroup.id)}
+                  className="flex-1"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Add Expense
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleEditGroup(selectedGroup.id)}
+                  className="flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Group
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ from .user import UserResponse
 class GroupCreate(BaseModel):
     name: str
     member_ids: List[str] = []
+    member_emails: List[str] = []
 
 
 class GroupResponse(BaseModel):

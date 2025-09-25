@@ -101,7 +101,7 @@ class DatabaseService:
             return user_repo.update_password(user_id, password_hash)
 
     @staticmethod
-    def get_group(group_id: str) -> Group:
+    def get_group(group_id: str) -> Optional[Group]:
         """Get group by ID."""
         with DatabaseService.get_session() as db:
             group_repo = GroupRepository(db)

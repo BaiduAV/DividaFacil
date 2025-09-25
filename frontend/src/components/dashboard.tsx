@@ -25,7 +25,11 @@ import { apiClient, Group, Expense, User } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
-export function Dashboard() {
+interface DashboardProps {
+  onNavigate?: (tab: string, openModal?: boolean) => void;
+}
+
+export function Dashboard({ onNavigate }: DashboardProps) {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +71,29 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNavigateToAddExpense = () => {
+    if (onNavigate) {
+      onNavigate("add-expense");
+    }
+  };
+
+  const handleNavigateToGroups = () => {
+    if (onNavigate) {
+      onNavigate("groups", true); // Open modal automatically
+    }
+  };
+
+  const handleNavigateToInstallments = () => {
+    if (onNavigate) {
+      onNavigate("installments");
+    }
+  };
+
+  const handlePayInstallment = (installmentId: number) => {
+    // This is mock data for now - in a real implementation, this would call the API
+    toast.success(`Payment initiated for installment #${installmentId}`);
   };
 
   // Mock data for recent expenses (will be replaced with API call)
@@ -180,6 +207,7 @@ export function Dashboard() {
             <Button
               variant="outline"
               className="h-auto p-4 flex flex-col gap-2 hover:border-purple-300 dark:hover:border-purple-700"
+              onClick={handleNavigateToAddExpense}
             >
               <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <span className="text-sm">Add Expense</span>
@@ -187,6 +215,7 @@ export function Dashboard() {
             <Button
               variant="outline"
               className="h-auto p-4 flex flex-col gap-2 hover:border-teal-300 dark:hover:border-teal-700"
+              onClick={handleNavigateToGroups}
             >
               <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               <span className="text-sm">Create Group</span>
@@ -194,6 +223,7 @@ export function Dashboard() {
             <Button
               variant="outline"
               className="h-auto p-4 flex flex-col gap-2 hover:border-green-300 dark:hover:border-green-700"
+              onClick={() => toast.info("Settlement feature coming soon!")}
             >
               <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
               <span className="text-sm">Settle Up</span>
@@ -201,6 +231,7 @@ export function Dashboard() {
             <Button
               variant="outline"
               className="h-auto p-4 flex flex-col gap-2 gradient-card border-purple-200 dark:border-purple-700"
+              onClick={handleNavigateToInstallments}
             >
               <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <span className="text-sm">Create Plan</span>
@@ -217,6 +248,7 @@ export function Dashboard() {
             variant="ghost"
             size="sm"
             className="text-primary"
+            onClick={handleNavigateToGroups}
           >
             View All
             <ArrowRight className="w-4 h-4 ml-1" />
@@ -266,6 +298,7 @@ export function Dashboard() {
             variant="ghost"
             size="sm"
             className="text-primary"
+            onClick={handleNavigateToInstallments}
           >
             View All
             <ArrowRight className="w-4 h-4 ml-1" />
@@ -338,6 +371,7 @@ export function Dashboard() {
                   size="sm"
                   variant="outline"
                   className="mt-1"
+                  onClick={() => handlePayInstallment(installment.id)}
                 >
                   Pay Now
                 </Button>
@@ -355,6 +389,7 @@ export function Dashboard() {
             variant="ghost"
             size="sm"
             className="text-primary"
+            onClick={() => onNavigate && onNavigate("expenses")}
           >
             View All
             <ArrowRight className="w-4 h-4 ml-1" />

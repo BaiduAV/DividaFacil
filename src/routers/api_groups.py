@@ -14,8 +14,17 @@ async def create_group_api(
     group_data: GroupCreate, current_user: User = Depends(require_authentication)
 ):
     """Create a new group via JSON API. Current user automatically becomes a member."""
-    # Create group and add current user as a member
-    created = DatabaseService.create_group(group_data.name, [current_user.id])
+    # Collect member IDs from both direct IDs and emails
+    member_ids = set([current_user.id] + group_data.member_ids)
+    
+    # Convert emails to user IDs
+    for email in group_data.member_emails:
+        user = DatabaseService.get_user_by_email(email)
+        if user:
+            member_ids.add(user.id)
+    
+    # Create group with all resolved member IDs
+    created = DatabaseService.create_group(group_data.name, list(member_ids))
     return GroupResponse.from_group(created)
 
 
