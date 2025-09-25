@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
 import { ResetPassword } from "./reset-password";
+import { useErrorHandler } from "./error-boundary";
 
 export function Login() {
   const { login, signup } = useAuth();
+  const { handleError } = useErrorHandler();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +56,11 @@ export function Login() {
       await login(loginData.email, loginData.password);
       toast.success("Welcome back to DividaFacil!");
     } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+      if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('network'))) {
+        handleError(error);
+      } else {
+        toast.error("Login failed. Please check your credentials.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +93,11 @@ export function Login() {
       await signup(signupData.name, signupData.email, signupData.password);
       toast.success("Account created successfully!");
     } catch (error) {
-      toast.error("Signup failed. Please try again.");
+      if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('network'))) {
+        handleError(error);
+      } else {
+        toast.error("Signup failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +122,11 @@ export function Login() {
         toast.success("If the email exists, a reset link has been sent!");
       }
     } catch (error) {
-      toast.error("Failed to send password reset email");
+      if (error instanceof Error && (error.message.includes('fetch') || error.message.includes('network'))) {
+        handleError(error);
+      } else {
+        toast.error("Failed to send password reset email");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +149,7 @@ export function Login() {
         {/* Header with Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 gradient-primary rounded-2xl shadow-xl mb-4">
-            <Receipt className="w-8 h-8 text-white" />
+            <Receipt className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-teal-500 bg-clip-text text-transparent">
             DividaFacil
@@ -171,6 +185,7 @@ export function Login() {
                         type="email"
                         placeholder="john@example.com"
                         className="pl-10"
+                        autoComplete="email"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                         required
@@ -186,6 +201,7 @@ export function Login() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
                         className="pl-10 pr-10"
+                        autoComplete="current-password"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         required
@@ -257,6 +273,7 @@ export function Login() {
                         type="text"
                         placeholder="John Doe"
                         className="pl-10"
+                        autoComplete="name"
                         value={signupData.name}
                         onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                         required
@@ -272,6 +289,7 @@ export function Login() {
                         type="email"
                         placeholder="john@example.com"
                         className="pl-10"
+                        autoComplete="email"
                         value={signupData.email}
                         onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                         required
@@ -287,6 +305,7 @@ export function Login() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
                         className="pl-10 pr-10"
+                        autoComplete="new-password"
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         required
@@ -315,6 +334,7 @@ export function Login() {
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         className="pl-10 pr-10"
+                        autoComplete="new-password"
                         value={signupData.confirmPassword}
                         onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                         required
@@ -335,7 +355,7 @@ export function Login() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="pt-6">
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-purple-600 to-teal-500 hover:from-purple-700 hover:to-teal-600 text-white"
@@ -359,17 +379,22 @@ export function Login() {
           </Tabs>
         </Card>
 
-        {/* Footer */}
         <div className="text-center mt-8 text-sm text-muted-foreground">
           <p>
             By signing in, you agree to our{" "}
-            <Button variant="link" className="p-0 h-auto font-normal text-sm">
+            <a 
+              href="#terms" 
+              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+            >
               Terms of Service
-            </Button>{" "}
+            </a>{" "}
             and{" "}
-            <Button variant="link" className="p-0 h-auto font-normal text-sm">
+            <a 
+              href="#privacy" 
+              className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+            >
               Privacy Policy
-            </Button>
+            </a>
           </p>
         </div>
       </div>

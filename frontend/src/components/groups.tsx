@@ -636,7 +636,7 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
       {/* Group Details Modal */}
       {showGroupDetails && selectedGroup && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowGroupDetails(false);
@@ -645,15 +645,29 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
           }}
         >
           <div 
-            className="rounded-lg shadow-lg w-full max-w-2xl mx-4 bg-card text-card-foreground border border-border max-h-[90vh] overflow-y-auto"
+            className="rounded-xl shadow-2xl w-full max-w-4xl bg-card text-card-foreground border border-border max-h-[95vh] overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h2 className="text-xl font-semibold">{selectedGroup.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {getMembersArray(selectedGroup.members).length} members • {selectedGroup.expenses.length} expenses
-                </p>
+            <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedGroup.name}</h2>
+                  <div className="flex items-center gap-4 mt-1">
+                    <p className="text-sm text-muted-foreground">
+                      {getMembersArray(selectedGroup.members).length} members
+                    </p>
+                    <Badge variant={selectedGroup.expenses.length > 0 && Object.values(selectedGroup.balances).some(b => Math.abs(b) >= 0.01) ? "default" : "secondary"}>
+                      {selectedGroup.expenses.length > 0 && Object.values(selectedGroup.balances).some(b => Math.abs(b) >= 0.01) ? "Active" : "Settled"}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">•</span>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedGroup.expenses.length} expenses
+                    </p>
+                  </div>
+                </div>
               </div>
               <Button
                 variant="ghost"
@@ -662,90 +676,187 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
                   setShowGroupDetails(false);
                   setSelectedGroup(null);
                 }}
+                className="hover:bg-background/80"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Members Section */}
-              <div>
-                <h3 className="text-lg font-medium mb-4">Members</h3>
-                <div className="space-y-3">
-                  {getMembersArray(selectedGroup.members).map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-primary/10">
-                            {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">{member.email}</p>
-                        </div>
+            <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
+              <div className="p-6 space-y-8">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 mx-auto mb-2">
+                        <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <div className="text-right">
-                        <p className={`font-medium ${selectedGroup.balances[member.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {selectedGroup.balances[member.id] >= 0 ? '+' : ''}${Math.abs(selectedGroup.balances[member.id] || 0).toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedGroup.balances[member.id] >= 0 ? 'owed' : 'owes'}
-                        </p>
+                      <p className="text-sm text-muted-foreground">Total Spent</p>
+                      <p className="text-xl font-bold">
+                        ${selectedGroup.expenses.reduce((total, expense) => total + expense.amount, 0).toFixed(2)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 mx-auto mb-2">
+                        <Receipt className="w-5 h-5 text-green-600 dark:text-green-400" />
                       </div>
+                      <p className="text-sm text-muted-foreground">Expenses</p>
+                      <p className="text-xl font-bold">{selectedGroup.expenses.length}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 mx-auto mb-2">
+                        <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">Members</p>
+                      <p className="text-xl font-bold">{getMembersArray(selectedGroup.members).length}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Members Section */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Members & Balances
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {getMembersArray(selectedGroup.members).map((member) => {
+                      const balance = selectedGroup.balances[member.id] || 0;
+                      return (
+                        <Card key={member.id} className="overflow-hidden">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarFallback className="bg-primary/10 font-semibold">
+                                    {member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-semibold">{member.name}</p>
+                                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                                  Math.abs(balance) < 0.01 
+                                    ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' 
+                                    : balance >= 0 
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' 
+                                      : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                                }`}>
+                                  {Math.abs(balance) < 0.01 ? 'Settled' : `${balance >= 0 ? '+' : ''}$${Math.abs(balance).toFixed(2)}`}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {Math.abs(balance) < 0.01 ? 'No balance' : balance >= 0 ? 'owed to them' : 'they owe'}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Recent Expenses Section */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Receipt className="w-5 h-5" />
+                    Recent Expenses
+                  </h3>
+                  {selectedGroup.expenses.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedGroup.expenses.slice(-5).reverse().map((expense) => {
+                        const paidByMember = getMembersArray(selectedGroup.members).find((m: User) => m.id === expense.paid_by);
+                        return (
+                          <Card key={expense.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-full bg-primary/10">
+                                    <Receipt className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold">{expense.description}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Paid by {paidByMember?.name || 'Unknown'} • {new Date(expense.created_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-lg font-bold">${expense.amount.toFixed(2)}</p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {expense.split_type.toLowerCase()}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                      {selectedGroup.expenses.length > 5 && (
+                        <p className="text-center text-sm text-muted-foreground py-2">
+                          Showing 5 most recent expenses • {selectedGroup.expenses.length - 5} more expenses in total
+                        </p>
+                      )}
                     </div>
-                  ))}
+                  ) : (
+                    <Card className="text-center py-12 bg-muted/20">
+                      <CardContent>
+                        <Receipt className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <h4 className="font-semibold mb-2">No expenses yet</h4>
+                        <p className="text-muted-foreground mb-4">
+                          Start adding expenses to track group spending
+                        </p>
+                        <Button onClick={() => onNavigate && onNavigate("add-expense", selectedGroup.id)}>
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Add First Expense
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
 
-              {/* Recent Expenses Section */}
-              <div>
-                <h3 className="text-lg font-medium mb-4">Recent Expenses</h3>
-                {selectedGroup.expenses.length > 0 ? (
-                  <div className="space-y-3">
-                    {selectedGroup.expenses.slice(0, 5).map((expense) => (
-                      <div key={expense.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div>
-                          <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Paid by {getMembersArray(selectedGroup.members).find((m: User) => m.id === expense.paid_by)?.name || 'Unknown'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">${expense.amount.toFixed(2)}</p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {expense.split_type.toLowerCase()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>No expenses yet</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t border-border">
-                <Button 
-                  onClick={() => onNavigate && onNavigate("add-expense", selectedGroup.id)}
-                  className="flex-1"
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Add Expense
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleEditGroup(selectedGroup.id)}
-                  className="flex-1"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Group
-                </Button>
+              {/* Action Buttons Footer */}
+              <div className="border-t border-border bg-muted/20 p-6">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={() => onNavigate && onNavigate("add-expense", selectedGroup.id)}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Add Expense
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleEditGroup(selectedGroup.id)}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Group
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      // Navigate to full expenses list for this group
+                      onNavigate && onNavigate("expenses", selectedGroup.id);
+                    }}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    All Expenses
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
