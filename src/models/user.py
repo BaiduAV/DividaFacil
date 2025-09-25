@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
+from datetime import datetime
 
 
 @dataclass
@@ -10,7 +11,7 @@ class User:
     name: str
     email: str
     balance: Dict[str, float] = field(default_factory=dict)  # user_id -> amount owed
-    notification_preferences: Dict[str, bool] = field(
+    notification_preferences: Dict[str, Union[bool, int]] = field(
         default_factory=lambda: {
             "email_overdue": True,
             "email_upcoming": True,
@@ -18,6 +19,8 @@ class User:
         }
     )
     password_hash: Optional[str] = None  # For authentication
+    reset_token: Optional[str] = None  # For password reset
+    reset_token_expiry: Optional[datetime] = None  # Reset token expiration
 
     def update_balance(self, user_id: str, amount: float):
         """Update the balance with another user.

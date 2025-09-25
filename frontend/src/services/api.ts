@@ -1,5 +1,5 @@
 // API client for communicating with the FastAPI backend
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -32,9 +32,11 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
+      console.log(`API ${config.method || 'GET'} ${url} -> ${response.status}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error(`API Error ${response.status}:`, errorData);
         throw new ApiError(response.status, errorData.detail || 'Request failed');
       }
 
@@ -43,31 +45,44 @@ class ApiClient {
         return null as T;
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       if (error instanceof ApiError) {
+        console.error(`API Error:`, error);
         throw error;
       }
+      console.error(`Network Error:`, error);
       throw new ApiError(0, 'Network error');
     }
   }
 
   // Authentication endpoints
-  async login(email: string): Promise<{ message: string; user_id: string; user_name: string }> {
-    const formData = new FormData();
-    formData.append('email', email);
-
+  async login(email: string, password: string): Promise<{ message: string; user_id: string; user_name: string }> {
     return this.request('/login', {
       method: 'POST',
-      body: formData,
-      headers: {}, // Let browser set content-type for FormData
+      body: JSON.stringify({ email, password }),
     });
   }
 
-  async signup(userData: { name: string; email: string }): Promise<{ message: string; user_id: string; user_name: string }> {
-    return this.request('/users', {
+  async signup(userData: { name: string; email: string; password: string }): Promise<{ message: string; user_id: string; user_name: string }> {
+    return this.request('/signup', {
       method: 'POST',
       body: JSON.stringify(userData),
+    });
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string; token?: string }> {
+    return this.request('/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return this.request('/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
     });
   }
 
@@ -114,7 +129,7 @@ class ApiClient {
       paid_by: string;
       split_type: 'EQUAL' | 'EXACT' | 'PERCENTAGE';
       split_among: string[];
-      split_values?: number[];
+      split_values?: Record<string, number>;
       installments_count?: number;
       first_due_date?: string;
     }
@@ -167,7 +182,7 @@ export interface Expense {
   paid_by: string;
   split_type: 'EQUAL' | 'EXACT' | 'PERCENTAGE';
   split_among: string[];
-  split_values?: number[];
+  split_values?: Record<string, number>;
   installments_count: number;
   first_due_date?: string;
   created_at: string;

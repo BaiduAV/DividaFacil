@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 from typing import Dict, List, Optional
 
@@ -22,7 +22,7 @@ class ExpenseCreate(BaseModel):
     split_type: SplitType = SplitType.EQUAL
     split_values: Dict[str, float] = {}
     installments_count: int = 1
-    first_due_date: Optional[datetime] = None
+    first_due_date: Optional[date] = None
 
     @validator("amount")
     def amount_must_be_positive(cls, v):
@@ -40,7 +40,7 @@ class ExpenseCreate(BaseModel):
 class InstallmentResponse(BaseModel):
     number: int
     amount: float
-    due_date: datetime
+    due_date: date
     paid: bool
     paid_at: Optional[datetime] = None
 
@@ -70,7 +70,7 @@ class ExpenseResponse(BaseModel):
     split_values: Dict[str, float]
     created_at: datetime
     installments_count: int
-    first_due_date: Optional[datetime]
+    first_due_date: Optional[date]
     installments: List[InstallmentResponse] = []
 
     class Config:
@@ -84,12 +84,13 @@ class ExpenseResponse(BaseModel):
             description=expense.description,
             amount=expense.amount,
             paid_by=expense.paid_by,
+            created_by=expense.created_by,
             split_among=expense.split_among,
             split_type=SplitType(expense.split_type),
             split_values=expense.split_values,
             created_at=expense.created_at,
             installments_count=expense.installments_count,
-            first_due_date=expense.first_due_date,
+            first_due_date=expense.first_due_date.date() if expense.first_due_date else None,
             installments=[
                 InstallmentResponse.from_installment(inst) for inst in expense.installments
             ],

@@ -174,28 +174,28 @@ export function Groups() {
               {/* Members */}
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex -space-x-2">
-                  {Object.values(group.members)
+                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {}))
                     .slice(0, 4)
-                    .map((member, index) => (
+                    .map((member: any, index) => (
                       <Avatar
                         key={index}
                         className="w-6 h-6 border-2 border-background"
                       >
                         <AvatarFallback className="text-xs bg-primary/10">
-                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     ))}
-                  {Object.keys(group.members).length > 4 && (
+                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length > 4 && (
                     <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                       <span className="text-xs font-medium">
-                        +{Object.keys(group.members).length - 4}
+                        +{(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length - 4}
                       </span>
                     </div>
                   )}
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {Object.keys(group.members).length} members
+                  {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length} members
                 </span>
               </div>
             </CardHeader>
@@ -208,15 +208,15 @@ export function Groups() {
                     Total Spent
                   </p>
                   <p className="font-bold">
-                    ${group.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+                    ${(group.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">
                     Your Balance
                   </p>
-                  <p className={`font-bold ${user && group.balances[user.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {user && group.balances[user.id] >= 0 ? '+' : ''}${user ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
+                  <p className={`font-bold ${user && group.balances && group.balances[user.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {user && group.balances && group.balances[user.id] >= 0 ? '+' : ''}${user && group.balances ? Math.abs(group.balances[user.id] || 0).toFixed(2) : '0.00'}
                   </p>
                 </div>
               </div>
@@ -226,17 +226,17 @@ export function Groups() {
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={
-                      (user && group.balances[user.id] === 0) ? "secondary" : "outline"
+                      (user && group.balances && group.balances[user.id] === 0) ? "secondary" : "outline"
                     }
                   >
-                    {(user && group.balances[user.id] === 0) ? "Settled" : "Active"}
+                    {(user && group.balances && group.balances[user.id] === 0) ? "Settled" : "Active"}
                   </Badge>
                   <span className="text-muted-foreground">
-                    {group.expenses.length} expense{group.expenses.length !== 1 ? 's' : ''}
+                    {(group.expenses || []).length} expense{(group.expenses || []).length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <span className="text-muted-foreground">
-                  {group.expenses.length > 0 ? 'Recent activity' : 'No expenses yet'}
+                  {(group.expenses || []).length > 0 ? 'Recent activity' : 'No expenses yet'}
                 </span>
               </div>
 

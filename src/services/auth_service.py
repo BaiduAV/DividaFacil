@@ -1,6 +1,7 @@
 from typing import Optional
-
+import secrets
 import bcrypt
+from datetime import datetime, timedelta
 
 from src.models.user import User
 from src.services.database_service import DatabaseService
@@ -45,3 +46,34 @@ class AuthService:
 
         # Create user with password hash
         return DatabaseService.create_user_with_password(name, email, password_hash)
+
+    @staticmethod
+    def generate_reset_token(email: str) -> Optional[str]:
+        """Generate a password reset token for the user."""
+        user = DatabaseService.get_user_by_email(email)
+        if not user:
+            return None
+        
+        # Generate a secure random token
+        reset_token = secrets.token_urlsafe(32)
+        
+        # Set expiry to 1 hour from now
+        expiry = datetime.utcnow() + timedelta(hours=1)
+        
+        # Store the token in database
+        if DatabaseService.update_user_reset_token(user.id, reset_token, expiry):
+            return reset_token
+        return None
+
+    @staticmethod
+    def reset_password(reset_token: str, new_password: str) -> bool:
+        """Reset user password using a valid reset token."""
+        user = DatabaseService.get_user_by_reset_token(reset_token)
+        if not user:
+            return False
+        
+        # Hash the new password
+        password_hash = AuthService.hash_password(new_password)
+        
+        # Update password and clear reset token
+        return DatabaseService.update_user_password(user.id, password_hash)

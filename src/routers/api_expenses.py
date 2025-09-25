@@ -10,7 +10,7 @@ from src.schemas.expense import ExpenseCreate, ExpenseResponse
 from src.services.database_service import DatabaseService
 from src.services.expense_service import ExpenseService
 
-router = APIRouter(prefix="/api", tags=["expenses"])
+router = APIRouter(tags=["expenses"])
 
 
 @router.post("/groups/{group_id}/expenses", response_model=ExpenseResponse, status_code=201)
@@ -21,8 +21,7 @@ async def create_expense_api(
     current_user: User = Depends(require_authentication),
 ):
     """Create a new expense via JSON API. User must be a member of the group."""
-    # Require authentication
-    current_user = require_authentication(request)
+    # User is already authenticated via Depends(require_authentication)
 
     # Validate group exists
     group = DatabaseService.get_group(group_id)
@@ -63,8 +62,14 @@ async def create_expense_api(
                 detail=f"Exact values sum ({total_exact:.2f}) must equal total amount ({expense_data.amount:.2f})",
             )
 
-    # Use the provided date for both created_at and first_due_date if specified
-    expense_date = expense_data.first_due_date or datetime.now()
+    # Use the provided date for first_due_date, or default to today
+    first_due_date_dt = None
+    if expense_data.first_due_date:
+        # Convert date to datetime for the model
+        first_due_date_dt = datetime.combine(expense_data.first_due_date, datetime.min.time())
+    else:
+        # Default to today if no due date specified
+        first_due_date_dt = datetime.now()
 
     expense = Expense(
         id=str(uuid.uuid4()),
@@ -75,9 +80,9 @@ async def create_expense_api(
         split_among=expense_data.split_among,
         split_type=expense_data.split_type.value,
         split_values=expense_data.split_values,
-        created_at=expense_date,
+        created_at=datetime.now(),
         installments_count=expense_data.installments_count,
-        first_due_date=expense_date,
+        first_due_date=first_due_date_dt,
     )
 
     # Generate installments if applicable
@@ -99,8 +104,7 @@ async def list_expenses_api(
     group_id: str, request: Request, current_user: User = Depends(require_authentication)
 ):
     """List all expenses for a group via JSON API, filtered by authenticated user. User must be a member of the group."""
-    # Require authentication
-    current_user = require_authentication(request)
+    # User is already authenticated via Depends(require_authentication)
 
     group = DatabaseService.get_group(group_id)
     if not group:
@@ -143,10 +147,14 @@ async def pay_installment_api(group_id: str, expense_id: str, number: int, reque
 
 
 @router.delete("/groups/{group_id}/expenses/{expense_id}", status_code=204)
-async def delete_expense_api(group_id: str, expense_id: str, request: Request):
+async def delete_expense_api(
+    group_id: str, 
+    expense_id: str, 
+    request: Request, 
+    current_user: User = Depends(require_authentication)
+):
     """Delete an expense via JSON API."""
-    # Require authentication
-    current_user = require_authentication(request)
+    # User is already authenticated via Depends(require_authentication)
 
     # Check if expense exists and user is the creator
     group = DatabaseService.get_group(group_id)

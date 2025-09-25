@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from src.database import create_tables, get_db
@@ -77,6 +78,27 @@ class DatabaseService:
         with DatabaseService.get_session() as db:
             user_repo = UserRepository(db)
             return user_repo.get_by_email(email)
+
+    @staticmethod
+    def update_user_reset_token(user_id: str, reset_token: str, expiry: datetime) -> bool:
+        """Update user's password reset token and expiry."""
+        with DatabaseService.get_session() as db:
+            user_repo = UserRepository(db)
+            return user_repo.update_reset_token(user_id, reset_token, expiry)
+
+    @staticmethod
+    def get_user_by_reset_token(reset_token: str) -> Optional[User]:
+        """Get user by reset token."""
+        with DatabaseService.get_session() as db:
+            user_repo = UserRepository(db)
+            return user_repo.get_by_reset_token(reset_token)
+
+    @staticmethod
+    def update_user_password(user_id: str, password_hash: str) -> bool:
+        """Update user's password hash and clear reset token."""
+        with DatabaseService.get_session() as db:
+            user_repo = UserRepository(db)
+            return user_repo.update_password(user_id, password_hash)
 
     @staticmethod
     def get_group(group_id: str) -> Group:

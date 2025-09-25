@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -64,6 +65,42 @@ class AppFactory:
 
     def _add_middleware(self, app: FastAPI) -> None:
         """Add middleware to the application."""
+        # Add CORS middleware for security and cross-origin requests
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[
+                "http://localhost:3000",  # React dev server
+                "http://127.0.0.1:3000",  # React dev server alternative
+                "http://localhost:3001",  # React dev server (alternative port)
+                "http://127.0.0.1:3001",  # React dev server alternative
+                "http://localhost:8000",  # Self (for frontend build)
+                "http://127.0.0.1:8000",  # Self alternative
+            ],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allow_headers=["*"],
+        )
+        
+        # Add security headers middleware
+        @app.middleware("http")
+        async def add_security_headers(request: Request, call_next):
+            response = await call_next(request)
+            # Security headers
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self'; "
+                "connect-src 'self'"
+            )
+            return response
+
+        # Session middleware
         app.add_middleware(
             SessionMiddleware,
             secret_key=self.settings.SESSION_SECRET_KEY,

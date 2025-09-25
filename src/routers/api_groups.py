@@ -6,7 +6,7 @@ from src.schemas.group import GroupCreate, GroupResponse
 from src.services.database_service import DatabaseService
 from src.services.expense_service import ExpenseService
 
-router = APIRouter(prefix="/api", tags=["groups"])
+router = APIRouter(tags=["groups"])
 
 
 @router.post("/groups", response_model=GroupResponse, status_code=201)

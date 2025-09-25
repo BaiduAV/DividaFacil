@@ -47,7 +47,7 @@ export function Dashboard() {
       let totalOwing = 0;
 
       userGroups.forEach(group => {
-        if (user && group.balances[user.id]) {
+        if (user && group.balances && group.balances[user.id]) {
           const balance = group.balances[user.id];
           if (balance > 0) {
             totalOwed += balance;
@@ -235,22 +235,22 @@ export function Dashboard() {
                 <div>
                   <h4 className="font-medium">{group.name}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {Object.keys(group.members).length} members • $
-                    {group.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} total
+                    {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length} members • $
+                    {(group.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} total
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-medium">
-                  ${user && group.balances[user.id] ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
+                  ${user && group.balances && group.balances[user.id] ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
                 </p>
                 <Badge
                   variant={
-                    (user && group.balances[user.id] && group.balances[user.id] === 0) ? "secondary" : "outline"
+                    (user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "secondary" : "outline"
                   }
                   className="text-xs"
                 >
-                  {(user && group.balances[user.id] && group.balances[user.id] === 0) ? "Settled" : "Active"}
+                  {(user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "Settled" : "Active"}
                 </Badge>
               </div>
             </div>

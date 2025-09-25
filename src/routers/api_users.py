@@ -5,7 +5,7 @@ from src.models.user import User
 from src.schemas.user import UserCreate, UserResponse
 from src.services.database_service import DatabaseService
 
-router = APIRouter(prefix="/api", tags=["users"])
+router = APIRouter(tags=["users"])
 
 
 @router.post("/users", response_model=UserResponse, status_code=201)

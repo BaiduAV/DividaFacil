@@ -140,7 +140,12 @@ export function AddExpense({ onBack }: AddExpenseProps) {
         paid_by: selectedPayer,
         split_type: splitType,
         split_among: selectedMembers,
-        split_values: splitType === "EQUAL" ? undefined : selectedMembers.map(memberId => splitValues[memberId] || 0),
+        split_values: splitType === "EQUAL" 
+          ? {} 
+          : selectedMembers.reduce((acc, memberId) => {
+              acc[memberId] = splitValues[memberId] || 0;
+              return acc;
+            }, {} as Record<string, number>),
         installments_count: isInstallment ? parseInt(installmentMonths) : 1,
         first_due_date: startDate ? new Date(startDate).toISOString() : undefined,
       };

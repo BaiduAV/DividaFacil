@@ -8,12 +8,16 @@ import { ThemeToggle } from "./theme-toggle";
 import { Receipt, Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
+import api from "../services/api";
+import { ResetPassword } from "./reset-password";
 
 export function Login() {
   const { login, signup } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetToken, setResetToken] = useState("");
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -40,11 +44,17 @@ export function Login() {
       return;
     }
 
+    if (!loginData.password) {
+      toast.error("Please enter your password");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      await login(loginData.email);
+      await login(loginData.email, loginData.password);
       toast.success("Welcome back to DividaFacil!");
     } catch (error) {
-      toast.error("Login failed. Please check your email.");
+      toast.error("Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +84,7 @@ export function Login() {
     }
 
     try {
-      await signup(signupData.name, signupData.email);
+      await signup(signupData.name, signupData.email, signupData.password);
       toast.success("Account created successfully!");
     } catch (error) {
       toast.error("Signup failed. Please try again.");
@@ -83,12 +93,29 @@ export function Login() {
     }
   };
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!loginData.email) {
       toast.error("Please enter your email first");
       return;
     }
-    toast.success("Password reset link sent to your email!");
+
+    try {
+      setIsLoading(true);
+      const response = await api.forgotPassword(loginData.email);
+      
+      if (response.token) {
+        // In development, show the token and open reset dialog
+        setResetToken(response.token);
+        setShowResetDialog(true);
+        toast.success("Reset token generated! Use it in the reset password form.");
+      } else {
+        toast.success("If the email exists, a reset link has been sent!");
+      }
+    } catch (error) {
+      toast.error("Failed to send password reset email");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -346,6 +373,13 @@ export function Login() {
           </p>
         </div>
       </div>
+
+      {/* Reset Password Dialog */}
+      <ResetPassword
+        open={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        token={resetToken}
+      />
     </div>
   );
 }
