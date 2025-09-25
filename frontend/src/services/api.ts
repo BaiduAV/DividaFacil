@@ -120,6 +120,12 @@ class ApiClient {
     return this.request(`/groups/${groupId}`);
   }
 
+  async deleteGroup(groupId: string): Promise<void> {
+    return this.request(`/groups/${groupId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Expense endpoints
   async createExpense(
     groupId: string,

@@ -120,6 +120,61 @@ class DatabaseService:
         return DatabaseService.add_member_to_group(group_id, user_id)
 
     @staticmethod
+    def delete_group(group_id: str) -> bool:
+        """Delete group by ID."""
+        with DatabaseService.get_session() as db:
+            group_repo = GroupRepository(db)
+            return group_repo.delete(group_id)
+
+    @staticmethod
+    def is_group_settled(group_id: str) -> bool:
+        """Check if a group is settled (all balances below threshold)."""
+        group = DatabaseService.get_group(group_id)
+        if not group:
+            return True  # Non-existent groups are considered "settled"
+        
+        from src.constants import MIN_BALANCE_THRESHOLD
+        
+        # Calculate group-specific balances (same logic as GroupResponse)
+        group_balances = {user_id: {} for user_id in group.members.keys()}
+        
+        for expense in group.expenses:
+            portions = {}
+            
+            if expense.split_type == "EQUAL":
+                split_amount = round(expense.amount / len(expense.split_among), 2)
+                portions = {uid: split_amount for uid in expense.split_among if uid in group.members}
+            elif expense.split_type == "EXACT":
+                portions = {uid: amt for uid, amt in expense.split_values.items() if uid in group.members}
+            elif expense.split_type == "PERCENTAGE":
+                for uid, pct in expense.split_values.items():
+                    if uid in group.members:
+                        portions[uid] = round((expense.amount * pct) / 100.0, 2)
+            
+            # Apply portions to balances
+            for uid, owed_amount in portions.items():
+                if uid == expense.paid_by:
+                    continue  # Payer doesn't owe themselves
+                
+                # uid owes expense.paid_by the owed_amount
+                if expense.paid_by not in group_balances[uid]:
+                    group_balances[uid][expense.paid_by] = 0
+                group_balances[uid][expense.paid_by] += owed_amount
+                
+                # expense.paid_by is owed by uid
+                if uid not in group_balances[expense.paid_by]:
+                    group_balances[expense.paid_by][uid] = 0
+                group_balances[expense.paid_by][uid] -= owed_amount
+        
+        # Check if all net balances are below threshold
+        for user_id in group.members.keys():
+            net_balance = sum(group_balances[user_id].values())
+            if abs(net_balance) >= MIN_BALANCE_THRESHOLD:
+                return False
+                
+        return True
+
+    @staticmethod
     def update_user_balances(users: Dict[str, User]):
         """Update user balances in database."""
         with DatabaseService.get_session() as db:

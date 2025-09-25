@@ -31,6 +31,7 @@ import {
   Settings,
   X,
   Receipt,
+  AlertTriangle,
 } from "lucide-react";
 import { apiClient, Group, User } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -40,9 +41,10 @@ interface GroupsProps {
   openCreateModal?: boolean;
   onCreateModalClose?: () => void;
   onNavigate?: (tab: string, groupId?: string) => void;
+  refreshTrigger?: boolean;
 }
 
-export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate }: GroupsProps) {
+export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate, refreshTrigger }: GroupsProps) {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,9 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [showGroupDetails, setShowGroupDetails] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Helper function to convert members dictionary to array
   const getMembersArray = (members: Record<string, User>): User[] => {
@@ -66,6 +71,13 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
     loadGroups();
     loadUsers();
   }, []);
+
+  // Refresh groups when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined) {
+      loadGroups();
+    }
+  }, [refreshTrigger]);
 
   const loadUsers = async () => {
     try {
@@ -166,8 +178,61 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
     toast.info(`Add members to group ${groupId} - Coming soon!`);
   };
 
+  const isGroupSettled = (group: Group): boolean => {
+    // A group is settled if all members have no significant balances
+    const MIN_THRESHOLD = 0.01; // $0.01 minimum threshold
+    
+    // Check group-level balances
+    if (group.balances) {
+      for (const balance of Object.values(group.balances)) {
+        if (Math.abs(balance) >= MIN_THRESHOLD) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   const handleDeleteGroup = (groupId: string) => {
-    toast.error(`Delete group ${groupId} - Coming soon!`);
+    const group = groups.find(g => g.id === groupId);
+    if (!group) {
+      toast.error("Group not found");
+      return;
+    }
+
+    if (!isGroupSettled(group)) {
+      toast.error("Cannot delete group with outstanding balances. Please settle all debts first.");
+      return;
+    }
+
+    setGroupToDelete(group);
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!groupToDelete) return;
+
+    try {
+      setDeleting(true);
+      await apiClient.deleteGroup(groupToDelete.id);
+      toast.success(`Group "${groupToDelete.name}" deleted successfully!`);
+      setShowDeleteConfirmation(false);
+      setGroupToDelete(null);
+      loadGroups(); // Refresh the list
+    } catch (error: any) {
+      if (error.status === 400) {
+        toast.error("Cannot delete group with outstanding balances. Please settle all debts first.");
+      } else if (error.status === 403) {
+        toast.error("You don't have permission to delete this group.");
+      } else if (error.status === 404) {
+        toast.error("Group not found.");
+      } else {
+        toast.error("Failed to delete group. Please try again.");
+      }
+      console.error("Delete group error:", error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleGroupSettings = (groupId: string) => {
@@ -681,6 +746,81 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Group
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && groupToDelete && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteConfirmation(false);
+              setGroupToDelete(null);
+            }
+          }}
+        >
+          <div className="rounded-lg shadow-lg w-full max-w-md mx-4 bg-card text-card-foreground border border-border">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h2 className="text-lg font-semibold text-red-600">Delete Group</h2>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setGroupToDelete(null);
+                }}
+                disabled={deleting}
+                className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="flex items-center mb-3">
+                  <AlertTriangle className="w-6 h-6 text-red-600 mr-3" />
+                  <span className="font-medium">Are you sure?</span>
+                </div>
+                <p className="text-muted-foreground">
+                  This will permanently delete the group <strong>"{groupToDelete.name}"</strong> and all its data. 
+                  This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Group Details:</strong>
+                </p>
+                <ul className="text-sm text-muted-foreground mt-1">
+                  <li>• {getMembersArray(groupToDelete.members).length} members</li>
+                  <li>• {groupToDelete.expenses?.length || 0} expenses</li>
+                  <li>• Status: {isGroupSettled(groupToDelete) ? '✓ Settled' : '⚠ Has outstanding balances'}</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirmation(false);
+                    setGroupToDelete(null);
+                  }}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 rounded-md bg-background text-foreground border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteGroup}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {deleting ? "Deleting..." : "Delete Group"}
+                </button>
               </div>
             </div>
           </div>

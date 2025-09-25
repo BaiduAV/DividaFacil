@@ -15,6 +15,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [openCreateGroupModal, setOpenCreateGroupModal] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [refreshGroups, setRefreshGroups] = useState(false);
 
   const handleNavigateToGroups = (tab: string, openModal = false) => {
     setActiveTab(tab);
@@ -28,6 +29,16 @@ export default function App() {
     if (groupId) {
       setSelectedGroupId(groupId);
     }
+    // Trigger groups refresh when navigating to groups tab
+    if (tab === "groups") {
+      setRefreshGroups(prev => !prev);
+    }
+  };
+
+  const handleExpenseAdded = () => {
+    // Navigate back to groups and trigger refresh
+    setActiveTab("groups");
+    setRefreshGroups(prev => !prev);
   };
 
   const renderContent = () => {
@@ -40,6 +51,7 @@ export default function App() {
             openCreateModal={openCreateGroupModal}
             onCreateModalClose={() => setOpenCreateGroupModal(false)}
             onNavigate={handleNavigate}
+            refreshTrigger={refreshGroups}
           />
         );
       case "expenses":
@@ -49,7 +61,7 @@ export default function App() {
       case "add-expense":
         return (
           <AddExpense
-            onBack={() => setActiveTab("dashboard")}
+            onBack={handleExpenseAdded}
             groupId={selectedGroupId || undefined}
           />
         );

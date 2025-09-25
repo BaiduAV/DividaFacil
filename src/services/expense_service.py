@@ -300,16 +300,20 @@ class ExpenseService:
                     if uid == exp.paid_by:
                         continue
                     owed = round(amt * unpaid_ratio, 2)
-                    payer.update_balance(uid, owed)
-                    group.members[uid].update_balance(exp.paid_by, -owed)
+                    # Payer is owed money by uid (negative balance means others owe you)
+                    payer.update_balance(uid, -owed)
+                    # uid owes money to payer (positive balance means you owe others)
+                    group.members[uid].update_balance(exp.paid_by, owed)
             else:
                 # Full amount counts
                 for uid, amt in portions.items():
                     if uid == exp.paid_by:
                         continue
                     owed = round(amt, 2)
-                    payer.update_balance(uid, owed)
-                    group.members[uid].update_balance(exp.paid_by, -owed)
+                    # Payer is owed money by uid (negative balance means others owe you)
+                    payer.update_balance(uid, -owed)
+                    # uid owes money to payer (positive balance means you owe others)
+                    group.members[uid].update_balance(exp.paid_by, owed)
 
     @staticmethod
     def compute_monthly_analysis(group: Group) -> Dict[str, Dict[str, float]]:

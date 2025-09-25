@@ -86,3 +86,31 @@ async def add_member_api(
         raise HTTPException(status_code=400, detail="User is already a member")
 
     return {}
+
+
+@router.delete("/groups/{group_id}", status_code=204)
+async def delete_group_api(
+    group_id: str, current_user: User = Depends(require_authentication)
+):
+    """Delete a group via JSON API. Only allowed if group is settled and user is a member."""
+    group = DatabaseService.get_group(group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    # Check if current user is a member of the group (only members can delete)
+    if current_user.id not in group.members:
+        raise HTTPException(
+            status_code=403, detail="Access denied. You are not a member of this group."
+        )
+
+    # Check if group is settled (no outstanding balances)
+    if not DatabaseService.is_group_settled(group_id):
+        raise HTTPException(
+            status_code=400, detail="Cannot delete group with outstanding balances. Please settle all debts first."
+        )
+
+    # Delete the group
+    if not DatabaseService.delete_group(group_id):
+        raise HTTPException(status_code=500, detail="Failed to delete group")
+
+    return None
