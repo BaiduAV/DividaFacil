@@ -4,14 +4,13 @@
 services:
   - type: web
     name: dividafacil-web
-    runtime: docker
+    runtime: python
     autoDeploy: true
     plan: free
     region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn web_app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
-    
-    # The Dockerfile at repo root is used automatically
-    # Exposed port is 8000 inside the container (see Dockerfile)
 
     envVars:
       - key: APP_NAME
