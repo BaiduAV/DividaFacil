@@ -30,8 +30,9 @@ engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):
     # check_same_thread only valid for SQLite
     engine_kwargs["connect_args"] = {"check_same_thread": False}
-# Pre-ping helps long-lived connections on hosted DBs
-engine_kwargs["pool_pre_ping"] = True
+else:
+    # Pre-ping helps long-lived connections on hosted DBs
+    engine_kwargs["pool_pre_ping"] = True
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -107,6 +108,7 @@ class ExpenseDB(Base):
     group_id = Column(
         String, ForeignKey("groups.id"), nullable=False, index=True
     )  # Index for group expense queries
+    category = Column(String, nullable=True)  # expense category
     split_type = Column(String, nullable=False)  # EQUAL, EXACT, PERCENTAGE
     split_values = Column(JSON, default=dict)  # Store as JSON: {"user_id": value}
     created_at = Column(

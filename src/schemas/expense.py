@@ -19,6 +19,7 @@ class ExpenseCreate(BaseModel):
     amount: float
     paid_by: str
     split_among: List[str]
+    category: Optional[str] = None
     split_type: SplitType = SplitType.EQUAL
     split_values: Dict[str, float] = {}
     installments_count: int = 1
@@ -66,6 +67,7 @@ class ExpenseResponse(BaseModel):
     paid_by: str
     created_by: Optional[str]
     split_among: List[str]
+    category: Optional[str] = None
     split_type: SplitType
     split_values: Dict[str, float]
     created_at: datetime
@@ -86,6 +88,7 @@ class ExpenseResponse(BaseModel):
             paid_by=expense.paid_by,
             created_by=expense.created_by,
             split_among=expense.split_among,
+            category=expense.category,
             split_type=SplitType(expense.split_type),
             split_values=expense.split_values,
             created_at=expense.created_at,

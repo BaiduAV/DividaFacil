@@ -71,10 +71,6 @@ class AppFactory:
             allow_origins=[
                 "http://localhost:3000",  # React dev server
                 "http://127.0.0.1:3000",  # React dev server alternative
-                "http://localhost:3001",  # React dev server (alternative port)
-                "http://127.0.0.1:3001",  # React dev server alternative
-                "http://localhost:8000",  # Self (for frontend build)
-                "http://127.0.0.1:8000",  # Self alternative
             ],
             allow_credentials=True,
             allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -159,7 +155,11 @@ class AppFactory:
 
         @app.get("/healthz")
         async def healthz():
-            return HEALTH_CHECK_RESPONSE
+            try:
+                return HEALTH_CHECK_RESPONSE
+            except Exception as e:
+                logger.exception("Error in health check")
+                return {"error": str(e)}
 
     def _add_dashboard_route(self, app: FastAPI) -> None:
         """Add route to serve React app."""

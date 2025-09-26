@@ -78,6 +78,7 @@ async def create_expense_api(
         paid_by=expense_data.paid_by,
         created_by=current_user.id,  # Set created_by to authenticated user
         split_among=expense_data.split_among,
+        category=expense_data.category,
         split_type=expense_data.split_type.value,
         split_values=expense_data.split_values,
         created_at=datetime.now(),

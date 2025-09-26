@@ -20,6 +20,7 @@ class ExpenseRepository:
             paid_by=expense.paid_by,
             created_by=expense.created_by,
             group_id=group_id,
+            category=expense.category,
             split_type=expense.split_type,
             split_values=expense.split_values,
             created_at=expense.created_at,
@@ -180,6 +181,7 @@ class ExpenseRepository:
             paid_by=db_expense.paid_by,
             created_by=db_expense.created_by,  # This can be None for legacy data
             split_among=split_among,
+            category=db_expense.category,
             split_type=db_expense.split_type,
             split_values=db_expense.split_values or {},
             created_at=db_expense.created_at,

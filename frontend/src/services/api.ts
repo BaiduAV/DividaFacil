@@ -186,6 +186,7 @@ export interface Expense {
   description: string;
   amount: number;
   paid_by: string;
+  category?: string;
   split_type: 'EQUAL' | 'EXACT' | 'PERCENTAGE';
   split_among: string[];
   split_values?: Record<string, number>;

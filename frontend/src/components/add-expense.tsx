@@ -59,6 +59,10 @@ export function AddExpense({ onBack, groupId }: AddExpenseProps) {
 
   useEffect(() => {
     loadGroups();
+    // Set default category to "other" for better UX
+    if (!selectedCategory) {
+      setSelectedCategory("other");
+    }
   }, []);
 
   useEffect(() => {
@@ -137,6 +141,11 @@ export function AddExpense({ onBack, groupId }: AddExpenseProps) {
       return;
     }
 
+    if (!selectedCategory) {
+      toast.error("Please select a category for the expense");
+      return;
+    }
+
     if (selectedMembers.length === 0) {
       toast.error("Please select at least one member to split with");
       return;
@@ -149,6 +158,7 @@ export function AddExpense({ onBack, groupId }: AddExpenseProps) {
         description,
         amount: parseFloat(amount),
         paid_by: selectedPayer,
+        category: selectedCategory, // Category is now always set (default or selected)
         split_type: splitType,
         split_among: selectedMembers,
         split_values: splitType === "EQUAL" 

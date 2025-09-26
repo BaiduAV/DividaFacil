@@ -65,7 +65,7 @@ export function Expenses() {
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesGroup = selectedGroup === "all" || getExpenseGroup(expense)?.id === selectedGroup;
-    const matchesCategory = selectedCategory === "all";
+    const matchesCategory = selectedCategory === "all" || expense.category === selectedCategory;
     return matchesSearch && matchesGroup && matchesCategory;
   });
 
@@ -139,6 +139,7 @@ export function Expenses() {
         return "🏨";
       case "Entertainment":
         return "🎬";
+      case "General":
       default:
         return "💰";
     }
@@ -154,6 +155,7 @@ export function Expenses() {
         return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300";
       case "Entertainment":
         return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+      case "General":
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
     }
@@ -204,7 +206,10 @@ export function Expenses() {
                 ))}
               </SelectContent>
             </Select>
-            <Select>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
@@ -212,17 +217,20 @@ export function Expenses() {
                 <SelectItem value="all">
                   All Categories
                 </SelectItem>
-                <SelectItem value="food">
+                <SelectItem value="Food & Drink">
                   Food & Drink
                 </SelectItem>
-                <SelectItem value="transport">
+                <SelectItem value="Transportation">
                   Transportation
                 </SelectItem>
-                <SelectItem value="accommodation">
+                <SelectItem value="Accommodation">
                   Accommodation
                 </SelectItem>
-                <SelectItem value="entertainment">
+                <SelectItem value="Entertainment">
                   Entertainment
+                </SelectItem>
+                <SelectItem value="General">
+                  General
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -250,9 +258,9 @@ export function Expenses() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
-                    {/* Category Icon - Default for now since category not in API */}
+                    {/* Category Icon */}
                     <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-lg">
-                      💰
+                      {getCategoryIcon(expense.category || "General")}
                     </div>
 
                     {/* Expense Details */}
@@ -261,8 +269,8 @@ export function Expenses() {
                         <h3 className="font-medium truncate">
                           {expense.description}
                         </h3>
-                        <Badge className="text-xs bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300">
-                          General
+                        <Badge className={`text-xs ${getCategoryColor(expense.category || "General")}`}>
+                          {expense.category || "General"}
                         </Badge>
                       </div>
 

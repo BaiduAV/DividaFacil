@@ -26,7 +26,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
 interface DashboardProps {
-  onNavigate?: (tab: string, openModal?: boolean) => void;
+  onNavigate?: (tab: string, openModal?: boolean, groupId?: string) => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
@@ -81,7 +81,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   const handleNavigateToGroups = () => {
     if (onNavigate) {
-      onNavigate("groups", true); // Open modal automatically
+      onNavigate("groups"); // Don't open modal, just navigate to groups
+    }
+  };
+
+  const handleCreateGroup = () => {
+    if (onNavigate) {
+      onNavigate("groups", true); // Open create modal
+    }
+  };
+
+  const handleNavigateToGroup = (groupId: string) => {
+    if (onNavigate) {
+      onNavigate("group-details", false, groupId);
     }
   };
 
@@ -91,38 +103,58 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
   };
 
-  const handlePayInstallment = (installmentId: number) => {
-    // This is mock data for now - in a real implementation, this would call the API
-    toast.success(`Payment initiated for installment #${installmentId}`);
+  // Get recent expenses from user groups
+  const getRecentExpenses = () => {
+    const allExpenses: any[] = [];
+    
+    groups.forEach(group => {
+      if (group.expenses && group.expenses.length > 0) {
+        group.expenses.forEach(expense => {
+          const paidByMember = Array.isArray(group.members) 
+            ? group.members.find(m => m.id === expense.paid_by)
+            : Object.values(group.members || {}).find((m: any) => m.id === expense.paid_by);
+          
+          allExpenses.push({
+            id: expense.id,
+            description: expense.description,
+            amount: expense.amount,
+            paidBy: user && expense.paid_by === user.id ? "You" : (paidByMember?.name || "Unknown"),
+            group: group.name,
+            date: new Date(expense.created_at),
+            rawDate: expense.created_at
+          });
+        });
+      }
+    });
+
+    // Sort by date (newest first) and take first 3
+    return allExpenses
+      .sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
+      .slice(0, 3)
+      .map(expense => ({
+        ...expense,
+        date: formatRelativeTime(expense.date)
+      }));
   };
 
-  // Mock data for recent expenses (will be replaced with API call)
-  const recentExpenses = [
-    {
-      id: "1",
-      description: "Hotel Stay",
-      amount: 450.0,
-      paidBy: "Sarah M.",
-      group: "Weekend Trip",
-      date: "2 hours ago",
-    },
-    {
-      id: "2",
-      description: "Dinner at Romano's",
-      amount: 89.5,
-      paidBy: "You",
-      group: "Dinner Club",
-      date: "1 day ago",
-    },
-    {
-      id: "3",
-      description: "Uber Ride",
-      amount: 24.8,
-      paidBy: "Mike L.",
-      group: "Office Lunch",
-      date: "2 days ago",
-    },
-  ];
+  // Helper function to format relative time
+  const formatRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 60) {
+      return diffMins <= 1 ? "Just now" : `${diffMins} minutes ago`;
+    } else if (diffHours < 24) {
+      return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+    } else {
+      return diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
+    }
+  };
+
+  const recentExpenses = getRecentExpenses();
 
   return (
     <div className="space-y-6">
@@ -188,10 +220,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-teal-500 bg-clip-text text-transparent">
-              $800.00
+              $0.00
             </div>
             <p className="text-xs text-muted-foreground">
-              3 installment payments
+              No scheduled payments
             </p>
           </CardContent>
         </Card>
@@ -215,7 +247,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <Button
               variant="outline"
               className="h-auto p-4 flex flex-col gap-2 hover:border-teal-300 dark:hover:border-teal-700"
-              onClick={handleNavigateToGroups}
+              onClick={handleCreateGroup}
             >
               <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               <span className="text-sm">Create Group</span>
@@ -255,38 +287,49 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {groups.slice(0, 3).map((group) => (
-            <div
-              key={group.id}
-              className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
+          {groups.length > 0 ? (
+            groups.slice(0, 3).map((group) => (
+              <div
+                key={group.id}
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => handleNavigateToGroup(group.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{group.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length} members • $
+                      {(group.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} total
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">{group.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {(Array.isArray(group.members) ? group.members : Object.values(group.members || {})).length} members • $
-                    {(group.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} total
+                <div className="text-right">
+                  <p className="font-medium">
+                    ${user && group.balances && group.balances[user.id] ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
                   </p>
+                  <Badge
+                    variant={
+                      (user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "secondary" : "outline"
+                    }
+                    className="text-xs"
+                  >
+                    {(user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "Settled" : "Active"}
+                  </Badge>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  ${user && group.balances && group.balances[user.id] ? Math.abs(group.balances[user.id]).toFixed(2) : '0.00'}
-                </p>
-                <Badge
-                  variant={
-                    (user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "secondary" : "outline"
-                  }
-                  className="text-xs"
-                >
-                  {(user && group.balances && group.balances[user.id] && group.balances[user.id] === 0) ? "Settled" : "Active"}
-                </Badge>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-6">
+              <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No groups yet</p>
+              <p className="text-sm text-muted-foreground">
+                Create your first group to start splitting expenses
+              </p>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
 
@@ -305,79 +348,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[
-            {
-              id: 1,
-              planName: "Europe Trip 2025",
-              amount: 250.0,
-              dueDate: "Dec 1, 2024",
-              daysUntilDue: 10,
-              group: "Travel Buddies",
-              installmentNumber: 3,
-              totalInstallments: 6,
-              status: "upcoming",
-            },
-            {
-              id: 2,
-              planName: "Shared Apartment Rent",
-              amount: 300.0,
-              dueDate: "Jan 1, 2025",
-              daysUntilDue: 41,
-              group: "Roommates",
-              installmentNumber: 4,
-              totalInstallments: 6,
-              status: "upcoming",
-            },
-            {
-              id: 3,
-              planName: "Car Purchase",
-              amount: 250.0,
-              dueDate: "Jan 1, 2025",
-              daysUntilDue: 41,
-              group: "Car Pool",
-              installmentNumber: 7,
-              totalInstallments: 12,
-              status: "upcoming",
-            },
-          ].map((installment) => (
-            <div
-              key={installment.id}
-              className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium">
-                    {installment.planName}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {installment.group} •{" "}
-                    {installment.installmentNumber}/
-                    {installment.totalInstallments}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Due {installment.dueDate} •{" "}
-                    {installment.daysUntilDue} days
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  ${installment.amount.toFixed(2)}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-1"
-                  onClick={() => handlePayInstallment(installment.id)}
-                >
-                  Pay Now
-                </Button>
-              </div>
-            </div>
-          ))}
+          {/* Show empty state for installments since this feature may not be fully implemented */}
+          <div className="text-center py-6">
+            <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No upcoming installments</p>
+            <p className="text-sm text-muted-foreground">
+              Create installment plans to track payments over time
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -396,38 +374,48 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {recentExpenses.map((expense) => (
-            <div
-              key={expense.id}
-              className="flex items-center justify-between p-4 border border-border rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="text-xs">
-                    {expense.paidBy === "You"
-                      ? "YU"
-                      : expense.paidBy.slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h4 className="font-medium">
-                    {expense.description}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Paid by {expense.paidBy} • {expense.group}
+          {recentExpenses.length > 0 ? (
+            recentExpenses.map((expense) => (
+              <div
+                key={expense.id}
+                className="flex items-center justify-between p-4 border border-border rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="text-xs">
+                      {expense.paidBy === "You"
+                        ? "YU"
+                        : expense.paidBy.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">
+                      {expense.description}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Paid by {expense.paidBy} • {expense.group}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">
+                    ${expense.amount.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {expense.date}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  ${expense.amount.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {expense.date}
-                </p>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-6">
+              <Receipt className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No recent expenses</p>
+              <p className="text-sm text-muted-foreground">
+                Start adding expenses to your groups to see them here
+              </p>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
     </div>
