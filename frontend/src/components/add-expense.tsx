@@ -154,11 +154,15 @@ export function AddExpense({ onBack, groupId }: AddExpenseProps) {
     try {
       setSubmitting(true);
       
+      // Get the category name from the selected category ID
+      const selectedCategoryObj = categories.find(cat => cat.id === selectedCategory);
+      const categoryName = selectedCategoryObj ? selectedCategoryObj.name : "Other";
+      
       const expenseData = {
         description,
         amount: parseFloat(amount),
         paid_by: selectedPayer,
-        category: selectedCategory, // Category is now always set (default or selected)
+        category: categoryName, // Send the category name, not the ID
         split_type: splitType,
         split_among: selectedMembers,
         split_values: splitType === "EQUAL" 

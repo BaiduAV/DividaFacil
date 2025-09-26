@@ -139,7 +139,9 @@ export function Expenses() {
         return "🏨";
       case "Entertainment":
         return "🎬";
-      case "General":
+      case "Shopping":
+        return "🛍️";
+      case "Other":
       default:
         return "💰";
     }
@@ -155,7 +157,9 @@ export function Expenses() {
         return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300";
       case "Entertainment":
         return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
-      case "General":
+      case "Shopping":
+        return "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300";
+      case "Other":
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
     }
