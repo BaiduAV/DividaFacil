@@ -22,14 +22,18 @@ def test_delete_group_api(client):
     assert login_resp.status_code == 200
 
     # Create a settled group and then delete it
+    csrf_token = client.get("/api/csrf-token").json()["csrf_token"]
     group_resp = client.post(
         "/api/groups",
+        headers={"X-CSRF-Token": csrf_token},
         json={"name": "Delete Test Group", "member_ids": [], "member_emails": []},
     )
     assert group_resp.status_code == 201
     group_id = group_resp.json()["id"]
 
-    delete_resp = client.delete(f"/api/groups/{group_id}")
+    delete_resp = client.delete(
+        f"/api/groups/{group_id}", headers={"X-CSRF-Token": csrf_token}
+    )
     assert delete_resp.status_code == 204
 
     # Verify it's gone
@@ -37,12 +41,13 @@ def test_delete_group_api(client):
     assert get_deleted.status_code == 404
 
     # Non-existent group delete
-    missing_delete = client.delete("/api/groups/fake-group-id")
+    missing_delete = client.delete("/api/groups/fake-group-id", headers={"X-CSRF-Token": csrf_token})
     assert missing_delete.status_code == 404
 
     # Create group with members (by email) and add expense to make it unsettled
     group2_resp = client.post(
         "/api/groups",
+        headers={"X-CSRF-Token": csrf_token},
         json={
             "name": "Unsettled Test Group",
             "member_ids": [],
@@ -63,11 +68,15 @@ def test_delete_group_api(client):
         "split_type": "EQUAL",
         "split_among": member_ids,
     }
-    expense_resp = client.post(f"/api/groups/{group2_id}/expenses", json=expense_payload)
+    expense_resp = client.post(
+        f"/api/groups/{group2_id}/expenses", headers={"X-CSRF-Token": csrf_token}, json=expense_payload
+    )
     assert expense_resp.status_code == 201
 
     # Attempt to delete unsettled group should fail with 400
-    delete_unsettled = client.delete(f"/api/groups/{group2_id}")
+    delete_unsettled = client.delete(
+        f"/api/groups/{group2_id}", headers={"X-CSRF-Token": csrf_token}
+    )
     assert delete_unsettled.status_code == 400
     detail = delete_unsettled.json().get("detail", "")
     assert "outstanding" in detail.lower()

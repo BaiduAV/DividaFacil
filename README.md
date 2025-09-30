@@ -508,22 +508,38 @@ DividaFacil/
 
 ## Estrutura
 
-- `web_app.py`: app FastAPI, rotas e templates
-- `src/models/`: entidades de domínio
-- `src/services/`: regras de negócio
+### Proteção CSRF
+O backend implementa proteção CSRF para métodos de modificação (`POST`, `PUT`, `DELETE`, etc.) em rotas sob `/api/*` usando estratégia de **double-submit token** armazenado em sessão.
+
+Fluxo:
+1. Autenticar (signup/login) – estes endpoints são isentos de CSRF para permitir bootstrap da sessão.
+2. Obter token: `GET /api/csrf-token` → `{ "csrf_token": "...", "header": "X-CSRF-Token" }`
+3. Incluir o header `X-CSRF-Token` com o valor retornado em cada requisição de escrita.
+
+Se token faltar ou for inválido: resposta `403 {"detail": "Missing or invalid CSRF token"}`.
+
+No frontend: buscar o token após login e armazenar em memória (ou contexto); renovar se a sessão for reiniciada.
+
 - `src/settings.py`: configuração centralizada
 - `src/logging_config.py`: setup de logging
 - `src/filters.py`: filtros Jinja
 - `templates/`: HTML
 - `static/`: assets estáticos
-- `tests/`: suite de testes
+ Os testes agora usam **FastAPI TestClient in‑process**, não sendo necessário subir servidor separado. Testes de integração externos foram adaptados / marcados como opcionais. Para habilitar teste de conectividade do frontend dev server exporte `RUN_REACT_E2E=1`.
 
-## Deploy para produção (GitHub + Render)
+### Testes de CSRF
+`tests/test_csrf.py` valida cenários: ausência, token inválido e token válido.
 
-A aplicação está configurada para deploy usando **Python runtime** no Render, com build automático do frontend React.
+### Teste de Métricas
+`tests/test_metrics.py` garante presença de novos contadores.
 
-### 1. Preparar o projeto
 
+### CSRF
+- `GET /api/csrf-token` – retorna token para headers de escrita.
+
+### Métricas & Health
+- `GET /metrics` – Exposição Prometheus (texto) com contadores básicos e status.
+- `GET /healthz` – Liveness check.
 ```bash
 # Construir frontend para produção
 cd frontend
@@ -535,6 +551,20 @@ cd ..
 git add .
 git commit -m "Update production build"
 git push origin main
+```
+
+### Scrape de Métricas (Prometheus / Render / etc.)
+Basta configurar serviço para coletar `GET /metrics`. Exemplo Prometheus:
+```yaml
+scrape_configs:
+   - job_name: 'dividafacil'
+      metrics_path: /metrics
+      static_configs:
+         - targets: ['app:8000']
+```
+
+### Cabeçalhos Importantes
+Os cabeçalhos de segurança (CSP, X-Frame-Options, etc.) já vêm configurados; ajuste conforme necessidades de CDN ou fontes externas.
 ```
 
 ### 2. Deploy no Render

@@ -18,9 +18,12 @@ def test_category_display(client):
     )
     assert login_resp.status_code == 200
 
-    # Create group
+    # Fetch CSRF token then create group
+    token = client.get("/api/csrf-token").json()["csrf_token"]
     group_resp = client.post(
-        "/api/groups", json={"name": "Category Test Group", "member_ids": [], "member_emails": []}
+        "/api/groups",
+        headers={"X-CSRF-Token": token},
+        json={"name": "Category Test Group", "member_ids": [], "member_emails": []},
     )
     assert group_resp.status_code == 201
     group = group_resp.json()
@@ -34,7 +37,9 @@ def test_category_display(client):
         {"description": "Taxi", "amount": 50.0, "paid_by": member_ids[0], "split_type": "EQUAL", "split_among": member_ids},
     ]
     for payload in expenses_payloads:
-        resp = client.post(f"/api/groups/{group_id}/expenses", json=payload)
+        resp = client.post(
+            f"/api/groups/{group_id}/expenses", headers={"X-CSRF-Token": token}, json=payload
+        )
         assert resp.status_code == 201
 
     # Retrieve groups and find our test group
