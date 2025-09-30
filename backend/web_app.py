@@ -88,7 +88,7 @@ class AppFactory:
             response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "script-src 'self'; "
                 "style-src 'self' 'unsafe-inline'; "
                 "img-src 'self' data: https:; "
                 "font-src 'self'; "
@@ -172,15 +172,20 @@ class AppFactory:
 
         @app.get("/app")
         async def serve_react_app():
-            index_path = "frontend/build/index.html"
+            base_dir = getattr(self.settings, "FRONTEND_BUILD_DIR", os.path.join(os.path.dirname(__file__), "..", "frontend", "build"))
+            index_path = os.path.join(base_dir, "index.html")
             if os.path.exists(index_path):
                 return FileResponse(index_path, media_type="text/html")
             raise HTTPException(status_code=404, detail="React app not found")
 
         @app.get("/app/{full_path:path}")
-        async def serve_react_assets(full_path: str):
-            file_path = os.path.join("frontend/build", full_path)
-            if os.path.exists(file_path):
+            base_dir = os.path.abspath("../frontend/build")
+            requested_path = os.path.abspath(os.path.join(base_dir, full_path))
+            if not requested_path.startswith(base_dir):
+                raise HTTPException(status_code=403, detail="Forbidden")
+            if os.path.exists(requested_path):
+                return FileResponse(requested_path)
+            raise HTTPException(status_code=404, detail="Asset not found")
                 return FileResponse(file_path)
             raise HTTPException(status_code=404, detail="Asset not found")
 

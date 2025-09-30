@@ -1,23 +1,326 @@
-# DividaFácil Web
+<div align="center">
 
-Aplicação moderna para divisão de despesas com interface React e backend FastAPI.
+# DividaFácil
 
-## Visão geral
+Aplicação completa para dividir despesas entre pessoas e grupos. Suporte a divisão igual, valores exatos e porcentagens, parcelas, cálculo de saldos e notificações – com frontend moderno (React + Vite) e backend robusto (FastAPI).
 
-- **Frontend**: React + Vite + Tailwind CSS + Radix UI
-- **Backend**: FastAPI + Uvicorn (API-only)
-- **Banco**: SQLite (desenvolvimento) ou PostgreSQL (produção) via `DATABASE_URL`
-- **Deploy**: Render (Python runtime)
+</div>
 
-## Arquitetura
+---
 
-A aplicação segue uma arquitetura moderna com separação clara entre frontend e backend:
+## ✨ Principais Recursos
 
-- **Frontend React**: Single Page Application (SPA) servida pelo backend FastAPI
-- **Backend FastAPI**: API REST pura para operações de dados (sem templates)
-- **Banco de dados**: SQLAlchemy com suporte a SQLite/PostgreSQL
-- **Autenticação**: Sistema de sessões com middleware FastAPI
-- **Comunicação**: Frontend se conecta à API via HTTP requests
+Backend / Domínio:
+- Autenticação baseada em sessão (cookies)  
+- Usuários, grupos e associação de membros  
+- Despesas com divisão: igual / exata / porcentagem  
+- Parcelamento (instalments) e acompanhamento de vencimentos  
+- Cálculo de saldos e orientação para acertos  
+- Scripts de notificação (atrasadas e próximas)  
+- Internacionalização (pt-BR e en – expansível)  
+
+Frontend:
+- React + Vite + TypeScript  
+- Componentização moderna e acessível  
+- Gerenciamento de estado via Context API  
+- Camada de API e tratamento de erros centralizado  
+- Build de produção servido pelo FastAPI em `/app`  
+
+Qualidade & Ferramentas:
+- CLI interativa (`backend/main.py`)  
+- Testes automatizados (pytest)  
+- Logging estruturado  
+- Migrações (Alembic inicializado)  
+
+---
+
+## 🏗 Arquitetura
+
+```
+DividaFacil/
+├── backend/                  # Backend FastAPI
+│   ├── src/                  # Código Python (models, services, routers, etc.)
+│   ├── tests/                # Testes (pytest)
+│   ├── alembic/              # Migrações de banco
+│   ├── static/               # Arquivos estáticos (quando usados)
+│   ├── locales/              # Arquivos de i18n
+│   ├── web_app.py            # App ASGI principal
+│   ├── main.py               # CLI interativa
+│   ├── requirements.txt      # Dependências Python
+│   └── pyproject.toml        # Configuração de ferramentas
+├── frontend/                 # Frontend React + Vite
+│   ├── src/                  # Código TypeScript
+│   ├── build/                # Saída de produção (gerada)
+│   ├── index.html            # Entrada Vite
+│   └── package.json          # Dependências Node
+├── start-app.ps1             # Script unificado (Windows)
+├── start-app.sh              # Script unificado (Linux/macOS)
+└── README.md
+```
+
+Responsabilidades em execução:
+- API REST: `/api/*`  
+- Health check: `/healthz`  
+- SPA React: `/app` (raiz `/` redireciona)  
+- Assets estáticos: `/static/*`  
+
+---
+
+## 🚀 Início Rápido
+
+### 1. Requisitos
+| Componente | Versão | Observação |
+|------------|--------|------------|
+| Python | 3.12+ | Use ambiente virtual |
+| Node.js | 18+ | Inclui npm |
+| Git | recente | Clonar repositório |
+
+### 2. Um Comando (Recomendado)
+
+```powershell
+# Windows
+./start-app.ps1
+```
+```bash
+# Linux/macOS
+./start-app.sh
+```
+
+O script instala dependências, cria venv (se necessário), constrói o frontend e inicia backend + frontend.
+
+### 3. Manual (Backend)
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python -m uvicorn web_app:app --reload --port 8000
+```
+
+### 4. Manual (Frontend)
+```bash
+cd frontend
+npm install
+npm run dev      # Desenvolvimento: http://localhost:3000
+npm run build    # Produção: gera pasta build/
+```
+
+O backend serve o build (se existente) em `/app`.
+
+### 5. Endpoints Principais
+| Propósito | URL |
+|-----------|-----|
+| Aplicação Web | http://localhost:8000/ (→ /app) |
+| SPA React | http://localhost:8000/app |
+| API Root | http://localhost:8000/api |
+| Health Check | http://localhost:8000/healthz |
+| Documentação OpenAPI | http://localhost:8000/docs |
+
+---
+
+## � Scripts Unificados
+
+Windows (PowerShell):
+```powershell
+./start-app.ps1                 # Inicia tudo
+./start-app.ps1 -Mode backend   # Só backend
+./start-app.ps1 -Mode frontend  # Só frontend
+./start-app.ps1 -Port 8080 -FrontendPort 3100
+./start-app.ps1 -NoBuild        # Não reconstruir frontend
+```
+
+Linux / macOS:
+```bash
+./start-app.sh                  # Inicia tudo
+./start-app.sh -m backend       # Só backend
+./start-app.sh -m frontend      # Só frontend
+./start-app.sh -p 8080 -f 3100  # Portas customizadas
+./start-app.sh -n               # Pular build
+```
+
+---
+
+## 🧪 Testes
+```bash
+cd backend
+python -m pytest -q
+```
+Alguns testes que fazem requisições reais exigem o backend rodando em `:8000`.
+
+Dados de exemplo & notificações:
+```bash
+cd backend
+python create_test_data.py
+python scripts/notifications.py overdue --report-only
+python scripts/notifications.py upcoming --report-only
+```
+
+Frontend (se configurado):
+```bash
+cd frontend
+npm test
+```
+
+---
+
+## 💻 CLI Interativa
+```bash
+cd backend
+python main.py
+```
+Funções: criar grupos, adicionar despesas, ver saldos, sugerir acertos.
+
+---
+
+## ⚙️ Variáveis de Ambiente
+| Variável | Default | Uso |
+|----------|---------|-----|
+| APP_NAME | DividaFácil | Nome da aplicação |
+| DEBUG | false | Modo debug |
+| LOG_LEVEL | INFO | Nível de log |
+| DATABASE_URL | sqlite:///./dividafacil.db | Banco (usar PostgreSQL em produção) |
+| SESSION_SECRET_KEY | (dev) | Assinatura de sessão |
+| STATIC_DIR | static | Diretório estático |
+| LOCALES_DIR | locales | Diretório de i18n |
+| DEFAULT_LOCALE | pt-BR | Locale padrão |
+
+SMTP opcional:
+| Variável | Exemplo |
+|----------|---------|
+| SMTP_SERVER | smtp.gmail.com |
+| SMTP_PORT | 587 |
+| SMTP_USERNAME | seu-email@gmail.com |
+| SMTP_PASSWORD | senha-ou-app-password |
+
+Você pode usar `.env` localmente (não commitar credenciais sensíveis).
+
+---
+
+## 🗄 Banco de Dados & Migrações
+Desenvolvimento usa SQLite automaticamente. Para evoluir schema:
+```bash
+cd backend
+alembic revision --autogenerate -m "descricao"
+alembic upgrade head
+```
+Reset rápido (dev):
+```bash
+rm dividafacil.db   # Windows: Remove-Item dividafacil.db
+python -c "from src.database import create_tables; create_tables()"
+```
+Produção: defina `DATABASE_URL=postgresql+psycopg2://usuario:senha@host/db`.
+
+---
+
+## 🔐 Segurança
+- Alterar `SESSION_SECRET_KEY` em produção  
+- Usar HTTPS (fornecido pela plataforma)  
+- Reforçar CSP e cabeçalhos se necessário  
+- Rotacionar credenciais periodicamente  
+
+---
+
+## 🔌 Principais Endpoints API (`/api`)
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET  /api/users`
+- `POST /api/groups`
+- `GET  /api/groups/{group_id}/expenses`
+- `POST /api/expenses`
+
+Explorar docs interativos: `/docs`.
+
+---
+
+## 🌍 Internacionalização
+- Arquivos em `backend/locales/`  
+- Padrão: `pt-BR`  
+- Adicione novos JSON para mais idiomas  
+
+---
+
+## 🧹 Qualidade de Código
+```bash
+cd backend
+pip install black ruff isort
+black .
+isort .
+ruff check .
+```
+
+---
+
+## 🛠 Solução de Problemas
+| Problema | Causa provável | Ação |
+|----------|----------------|------|
+| Erros de import | venv não ativada | Ative e reinstale deps |
+| Página em branco | Sem build | `npm run build` em `frontend/` |
+| 404 SPA | Caminho errado | Use `/app` |
+| Banco travado (SQLite) | Interrupção abrupta | Remover arquivo e recriar |
+| Testes HTTP falhando | Backend parado | Subir servidor antes |
+| Email não enviado | SMTP ausente | Definir variáveis SMTP_* |
+
+Health check:
+```bash
+curl http://localhost:8000/healthz
+```
+
+---
+
+## 🚀 Deploy (Exemplo Render)
+Passos gerais:
+1. Build do frontend (`npm run build`)
+2. Instalar dependências Python
+3. Rodar: `python -m uvicorn web_app:app --host 0.0.0.0 --port 8000`
+
+Variáveis típicas:
+```
+APP_NAME=DividaFácil
+LOG_LEVEL=INFO
+DATABASE_URL=postgresql+psycopg2://user:senha@host/db
+SESSION_SECRET_KEY=trocar-em-producao
+```
+
+---
+
+## 🧭 Ideias Futuras
+- Sugestões de acerto mais inteligentes  
+- Templates de e‑mail ricos  
+- Suporte multi‑moeda  
+- Exportação CSV / PDF  
+- Atualização em tempo real (WebSocket)  
+
+---
+
+## 🤝 Contribuindo
+```bash
+git clone <url-repo>
+cd DividaFacil
+./start-app.ps1   # ou ./start-app.sh
+git checkout -b feature/minha-melhora
+python -m pytest -q
+git commit -am "feat: minha melhoria"
+git push origin feature/minha-melhora
+# Abra o PR
+```
+Mantenha commits objetivos e execute os testes antes de enviar.
+
+---
+
+## 📄 Licença
+MIT (adicione arquivo LICENSE se ainda não existir).
+
+---
+
+## 🙌 Agradecimentos
+- FastAPI, Pydantic, SQLAlchemy  
+- Comunidade React / Vite  
+- Ecosistema open-source  
+
+---
+
+Boas divisões! 💸
+
 
 ## Como funciona
 

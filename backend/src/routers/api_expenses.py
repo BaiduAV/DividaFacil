@@ -132,10 +132,15 @@ async def list_expenses_api(
 
 
 @router.post("/groups/{group_id}/expenses/{expense_id}/installments/{number}/pay", status_code=204)
-async def pay_installment_api(group_id: str, expense_id: str, number: int, request: Request):
+async def pay_installment_api(
+    group_id: str,
+    expense_id: str,
+    number: int,
+    request: Request,
+    current_user: User = Depends(require_authentication),
+):
     """Mark an installment as paid via JSON API."""
-    # Require authentication
-    require_authentication(request)
+    # User is already authenticated via Depends(require_authentication)
 
     if not DatabaseService.pay_installment(expense_id, number):
         raise HTTPException(status_code=404, detail="Installment not found or already paid")

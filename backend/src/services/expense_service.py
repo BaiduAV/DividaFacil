@@ -267,8 +267,8 @@ class ExpenseService:
     def recompute_group_balances(group: Group) -> None:
         """Recompute all user balances in a group from expenses and unpaid installments."""
         # reset balances
-        for u in group.members.values():
-            u.balance.clear()
+        for user in group.members.values():
+            user.balance.clear()
 
         for exp in group.expenses:
             payer = group.members[exp.paid_by]

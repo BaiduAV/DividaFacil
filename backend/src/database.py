@@ -16,14 +16,16 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 # Database URL - default to SQLite local file, overridable via env
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dividafacil.db")
+def normalize_database_url(url: str) -> str:
+    """Normalize database URL for SQLAlchemy compatibility."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://") and "+" not in url:
+        # Ensure psycopg2 driver explicit for reliability
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
 
-# Normalize postgres URLs (Render often provides postgres://)
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
-elif DATABASE_URL.startswith("postgresql://") and "+" not in DATABASE_URL:
-    # Ensure psycopg2 driver explicit for reliability
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./dividafacil.db"))
 
 # Engine setup depending on backend
 engine_kwargs = {}
