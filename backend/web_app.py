@@ -249,9 +249,14 @@ class AppFactory:
                 "FRONTEND_BUILD_DIR",
                 os.path.join(os.path.dirname(__file__), "..", "frontend", "build"),
             )
+            # Normalize to absolute path so subsequent security checks succeed and relative ('..') components are resolved.
+            base_dir = os.path.abspath(base_dir)
             index_path = os.path.join(base_dir, "index.html")
             if os.path.exists(index_path):
-                return FileResponse(index_path, media_type="text/html")
+                response = FileResponse(index_path, media_type="text/html")
+                # No long-term cache for index.html (acts as entrypoint / shell)
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                return response
             raise HTTPException(status_code=404, detail="React app not found")
 
         @app.get("/app/{full_path:path}")
@@ -261,11 +266,24 @@ class AppFactory:
                 "FRONTEND_BUILD_DIR",
                 os.path.join(os.path.dirname(__file__), "..", "frontend", "build"),
             )
+            base_dir = os.path.abspath(base_dir)
+            # Resolve requested path safely and ensure it remains inside base_dir
             requested_path = os.path.abspath(os.path.join(base_dir, full_path))
-            if not requested_path.startswith(base_dir):
+            try:
+                common = os.path.commonpath([requested_path, base_dir])
+            except ValueError:  # Different drives on Windows, treat as forbidden
                 raise HTTPException(status_code=403, detail="Forbidden")
-            if os.path.exists(requested_path):
-                return FileResponse(requested_path)
+            if common != base_dir:
+                raise HTTPException(status_code=403, detail="Forbidden")
+            if os.path.exists(requested_path) and os.path.isfile(requested_path):
+                resp = FileResponse(requested_path)
+                filename = os.path.basename(requested_path)
+                # Heuristic: hashed asset files (vite) get long cache; others minimal.
+                if "." in filename and any(part.startswith("index-") or len(part) > 16 for part in filename.split(".")):
+                    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+                else:
+                    resp.headers["Cache-Control"] = "public, max-age=300"
+                return resp
             raise HTTPException(status_code=404, detail="Asset not found")
 
 

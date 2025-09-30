@@ -28,7 +28,11 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: LOG_FORMAT
-        value: text  # change to 'json' in production for structured logs
+        value: json
+      - key: NODE_ENV
+        value: production
+      - key: WORKERS
+        value: "3"
       - key: SESSION_COOKIE_SECURE
         value: "true"
       - key: SESSION_SECRET_KEY
