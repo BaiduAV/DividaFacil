@@ -18,6 +18,10 @@ class Settings:
     STATIC_DIR: str = os.getenv("STATIC_DIR", "static")
     LOCALES_DIR: str = os.getenv("LOCALES_DIR", "locales")
     DEFAULT_LOCALE: str = os.getenv("DEFAULT_LOCALE", "pt-BR")
+    # Security / cookies
+    SESSION_COOKIE_SAMESITE: str = os.getenv("SESSION_COOKIE_SAMESITE", "lax")
+    SESSION_COOKIE_SECURE: bool = os.getenv("SESSION_COOKIE_SECURE", "false").lower() in {"1", "true", "yes", "on"}
+    AUDIT_LOG_FILE: str = os.getenv("AUDIT_LOG_FILE", "audit.log")
 
 
 @lru_cache(maxsize=1)

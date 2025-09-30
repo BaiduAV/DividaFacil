@@ -42,7 +42,7 @@ async def api_login(request: Request, login_data: LoginRequest):
     return {"message": "Login successful", "user_id": user.id, "user_name": user.name}
 
 
-@router.post("/signup")
+@router.post("/signup", status_code=201)
 async def api_signup(request: Request, signup_data: SignupRequest):
     """API signup endpoint for user registration."""
     # Validate password strength

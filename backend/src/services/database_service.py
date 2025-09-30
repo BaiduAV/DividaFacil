@@ -158,11 +158,18 @@ class DatabaseService:
                     group_balances[expense.paid_by][uid] = 0
                 group_balances[expense.paid_by][uid] -= owed_amount
 
-        # Check if all net balances are below threshold
-        for user_id in group.members.keys():
-            net_balance = sum(group_balances[user_id].values())
-            if abs(net_balance) >= MIN_BALANCE_THRESHOLD:
-                return False
+        # Check pairwise balances: if any owed amount above threshold remains, not settled
+        # If any pair has a non-zero outstanding amount (>= threshold) in either direction, not settled.
+        member_ids = list(group.members.keys())
+        for i, uid in enumerate(member_ids):
+            for vid in member_ids[i + 1 :]:
+                a = group_balances.get(uid, {}).get(vid, 0)
+                b = group_balances.get(vid, {}).get(uid, 0)
+                # Sanity: they should be opposite signs; if not, still treat as unsettled if either magnitude >= threshold
+                if abs(a) >= MIN_BALANCE_THRESHOLD or abs(b) >= MIN_BALANCE_THRESHOLD:
+                    # Consider them unsettled if their sum not ~0 or either magnitude significant
+                    if round(a + b, 2) != 0 or abs(a) >= MIN_BALANCE_THRESHOLD or abs(b) >= MIN_BALANCE_THRESHOLD:
+                        return False
 
         return True
 
@@ -180,6 +187,7 @@ class DatabaseService:
         with DatabaseService.get_session() as db:
             expense_repo = ExpenseRepository(db)
             expense_repo.create(expense, group_id)
+        # Invalidate any cached settlement notion by recomputing (no cache yet, placeholder for future)
 
     @staticmethod
     def pay_installment(expense_id: str, installment_number: int) -> bool:

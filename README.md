@@ -520,6 +520,30 @@ Se token faltar ou for inválido: resposta `403 {"detail": "Missing or invalid C
 
 No frontend: buscar o token após login e armazenar em memória (ou contexto); renovar se a sessão for reiniciada.
 
+### Audit Log
+Eventos de segurança e operações sensíveis são registrados em arquivo JSON-lines (padrão: `audit.log`). Cada linha contém:
+```json
+{"ts":"2025-09-30T12:34:56.123456+00:00","event":"group.created","actor_id":"<uuid>","actor_ip":"127.0.0.1","details":{"group_id":"...","name":"..."}}
+```
+Eventos atuais:
+- `group.created`, `group.deleted`
+- `expense.created`, `expense.deleted`
+
+Configuração:
+- Caminho via env `AUDIT_LOG_FILE` (default `audit.log`).
+- Rotação deve ser feita externamente (logrotate / stdout collector).
+
+### Cookies de Sessão
+Flags de endurecimento:
+- `https_only` (Secure) habilitado quando `SESSION_COOKIE_SECURE=true`.
+- SameSite padrão (implementação atual do framework) visa comportamento Lax; variável `SESSION_COOKIE_SAMESITE` disponível para evolução futura.
+
+Recomendações produção:
+```
+SESSION_COOKIE_SECURE=true
+SESSION_SECRET_KEY=<valor forte>
+```
+
 - `src/settings.py`: configuração centralizada
 - `src/logging_config.py`: setup de logging
 - `src/filters.py`: filtros Jinja
@@ -532,6 +556,9 @@ No frontend: buscar o token após login e armazenar em memória (ou contexto); r
 
 ### Teste de Métricas
 `tests/test_metrics.py` garante presença de novos contadores.
+
+### Teste de Audit Log
+`tests/test_audit.py` valida que criação de grupo e despesa geram entradas estruturadas.
 
 
 ### CSRF

@@ -115,6 +115,14 @@ async def delete_group_api(group_id: str, request: Request, current_user: User =
             detail="Cannot delete group with outstanding balances. Please settle all debts first.",
         )
 
+    # Re-fetch to ensure not deleted concurrently and still unsettled after recompute
+    refreshed = DatabaseService.get_group(group_id)
+    if refreshed and refreshed.expenses and not DatabaseService.is_group_settled(group_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete group with outstanding balances (post-check).",
+        )
+
     # Delete the group
     if not DatabaseService.delete_group(group_id):
         raise HTTPException(status_code=500, detail="Failed to delete group")

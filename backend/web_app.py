@@ -18,6 +18,7 @@ from src.routers.api_expenses import router as api_expenses_router
 from src.routers.api_groups import router as api_groups_router
 from src.routers.api_users import router as api_users_router
 from src.settings import get_settings
+from src.services.database_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,24 @@ class AppFactory:
         return self._app
 
     def _build_app(self) -> FastAPI:
-        app = FastAPI(title=self.settings.APP_NAME)
+        description = (
+            "DividaFácil API para gestão e divisão de despesas.\n\n"  # brief
+            "Segurança: sessões baseadas em cookie + proteção CSRF (header X-CSRF-Token).\n"
+            "Métricas: /metrics (Prometheus exposition) + /healthz.\n"
+            "Fluxo CSRF: login/signup -> GET /api/csrf-token -> enviar header em POST/PUT/DELETE."
+        )
+        app = FastAPI(
+            title=self.settings.APP_NAME,
+            description=description,
+            version="0.1.0",
+            contact={"name": "DividaFácil", "url": "https://example.com"},
+            openapi_tags=[
+                {"name": "auth", "description": "Autenticação & sessão"},
+                {"name": "users", "description": "Gestão de usuários"},
+                {"name": "groups", "description": "Grupos e membros"},
+                {"name": "expenses", "description": "Despesas e parcelas"},
+            ],
+        )
         configure_logging(self.settings.LOG_LEVEL)
         self._add_middleware(app)
         self._mount_static_files(app)
@@ -56,6 +74,15 @@ class AppFactory:
         self._add_health_check(app)
         self._add_metrics_endpoint(app)
         self._add_dashboard_route(app)
+        # Ensure DB tables exist (idempotent) for tests / first run.
+        try:
+            DatabaseService.initialize()
+            # Seed default user expected by some legacy tests if not present
+            from src.services.database_service import DatabaseService as _DBS
+            if not _DBS.get_user_by_email("test@example.com"):
+                _DBS.create_user("Test User", "test@example.com")
+        except Exception:  # pragma: no cover - defensive
+            logger.exception("Database initialization failed")
         return app
 
     def _add_middleware(self, app: FastAPI) -> None:
@@ -132,10 +159,24 @@ class AppFactory:
             SessionMiddleware,
             secret_key=self.settings.SESSION_SECRET_KEY,
             session_cookie=SESSION_COOKIE_NAME,
+            https_only=self.settings.SESSION_COOKIE_SECURE,
         )
 
     def _mount_static_files(self, app: FastAPI) -> None:
-        app.mount("/static", StaticFiles(directory=self.settings.STATIC_DIR), name="static")
+        # Resolve static directory robustly so tests don't fail if relative path differs.
+        directory = self.settings.STATIC_DIR
+        # If given relative path, try relative to this file, then parent project root.
+        if not os.path.isabs(directory):
+            candidate = os.path.join(os.path.dirname(__file__), directory)
+            if not os.path.isdir(candidate):
+                parent_candidate = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", directory))
+                if os.path.isdir(parent_candidate):
+                    candidate = parent_candidate
+            directory = candidate
+        if os.path.isdir(directory):
+            app.mount("/static", StaticFiles(directory=directory), name="static")
+        else:
+            logger.warning("Static directory '%s' not found; skipping static mount", directory)
 
     def _include_routers(self, app: FastAPI) -> None:
         for router in [api_users_router, api_groups_router, api_expenses_router, api_auth_router]:

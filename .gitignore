@@ -22,7 +22,6 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-start-app.*
 
 # Byte-compiled / compiled / build
 build/
