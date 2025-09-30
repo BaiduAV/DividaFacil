@@ -12,8 +12,9 @@ services:
     rootDir: backend
     # Build frontend (Node+Vite) then backend deps & migrations. Node & Python toolchains are available in Render's standard environment.
     buildCommand: |
+      # Install frontend (include devDependencies for Vite plugins), build, then backend deps & run migrations
       cd ../frontend \
-      && npm ci \
+      && npm ci --include=dev \
       && npm run build \
       && cd ../backend \
       && pip install -r requirements.txt \
