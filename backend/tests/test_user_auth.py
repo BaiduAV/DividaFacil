@@ -7,16 +7,12 @@ import json
 
 def create_and_test_user():
     """Create a test user and verify login works."""
-    
+
     base_url = "http://localhost:8000"
-    
+
     # Create test user
-    user_data = {
-        "name": "Category Tester",
-        "email": "tester@example.com",
-        "password": "test123"
-    }
-    
+    user_data = {"name": "Category Tester", "email": "tester@example.com", "password": "test123"}
+
     print("🔧 Creating test user...")
     try:
         response = requests.post(f"{base_url}/api/signup", json=user_data)
@@ -30,14 +26,11 @@ def create_and_test_user():
     except Exception as e:
         print(f"❌ Error creating user: {e}")
         return
-    
+
     # Test login
     print("\n🔐 Testing login...")
-    login_data = {
-        "email": user_data["email"],
-        "password": user_data["password"]
-    }
-    
+    login_data = {"email": user_data["email"], "password": user_data["password"]}
+
     session = requests.Session()
     try:
         response = session.post(f"{base_url}/api/login", json=login_data)
@@ -47,18 +40,18 @@ def create_and_test_user():
             print(f"   User ID: {auth_response.get('id')}")
             print(f"   Name: {auth_response.get('name')}")
             print(f"   Email: {auth_response.get('email')}")
-            
+
             # Check if there's a token
-            if 'token' in auth_response:
+            if "token" in auth_response:
                 session.headers.update({"Authorization": f"Bearer {auth_response['token']}"})
-                
+
         else:
             print(f"❌ Login failed: {response.status_code} - {response.text}")
             return
     except Exception as e:
         print(f"❌ Login error: {e}")
         return
-    
+
     # Test groups access
     print("\n📁 Testing groups access...")
     try:
@@ -69,7 +62,7 @@ def create_and_test_user():
             print(f"✅ Found {len(groups)} groups")
             for group in groups[:2]:
                 print(f"   - {group.get('name')} ({group.get('id')})")
-                if 'expenses' in group:
+                if "expenses" in group:
                     print(f"     📝 {len(group['expenses'])} expenses")
         else:
             print(f"❌ Groups access failed: {response.text}")

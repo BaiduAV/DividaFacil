@@ -154,10 +154,10 @@ async def pay_installment_api(
 
 @router.delete("/groups/{group_id}/expenses/{expense_id}", status_code=204)
 async def delete_expense_api(
-    group_id: str, 
-    expense_id: str, 
-    request: Request, 
-    current_user: User = Depends(require_authentication)
+    group_id: str,
+    expense_id: str,
+    request: Request,
+    current_user: User = Depends(require_authentication),
 ):
     """Delete an expense via JSON API."""
     # User is already authenticated via Depends(require_authentication)

@@ -16,13 +16,13 @@ async def create_group_api(
     """Create a new group via JSON API. Current user automatically becomes a member."""
     # Collect member IDs from both direct IDs and emails
     member_ids = set([current_user.id] + group_data.member_ids)
-    
+
     # Convert emails to user IDs
     for email in group_data.member_emails:
         user = DatabaseService.get_user_by_email(email)
         if user:
             member_ids.add(user.id)
-    
+
     # Create group with all resolved member IDs
     created = DatabaseService.create_group(group_data.name, list(member_ids))
     return GroupResponse.from_group(created)
@@ -89,9 +89,7 @@ async def add_member_api(
 
 
 @router.delete("/groups/{group_id}", status_code=204)
-async def delete_group_api(
-    group_id: str, current_user: User = Depends(require_authentication)
-):
+async def delete_group_api(group_id: str, current_user: User = Depends(require_authentication)):
     """Delete a group via JSON API. Only allowed if group is settled and user is a member."""
     group = DatabaseService.get_group(group_id)
     if not group:
@@ -106,7 +104,8 @@ async def delete_group_api(
     # Check if group is settled (no outstanding balances)
     if not DatabaseService.is_group_settled(group_id):
         raise HTTPException(
-            status_code=400, detail="Cannot delete group with outstanding balances. Please settle all debts first."
+            status_code=400,
+            detail="Cannot delete group with outstanding balances. Please settle all debts first.",
         )
 
     # Delete the group

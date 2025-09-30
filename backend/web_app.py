@@ -76,7 +76,7 @@ class AppFactory:
             allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
-        
+
         # Add security headers middleware
         @app.middleware("http")
         async def add_security_headers(request: Request, call_next):
@@ -138,8 +138,7 @@ class AppFactory:
         """Handle HTTP exceptions with JSON responses."""
         # Return JSON error responses for all requests (API and frontend)
         return JSONResponse(
-            status_code=exc.status_code,
-            content={"error": "HTTP Error", "detail": exc.detail}
+            status_code=exc.status_code, content={"error": "HTTP Error", "detail": exc.detail}
         )
 
     async def _handle_unhandled_exception(self, request: Request, exc: Exception) -> JSONResponse:
@@ -147,7 +146,7 @@ class AppFactory:
         logger.exception("Unhandled server error")
         return JSONResponse(
             status_code=500,
-            content={"error": "Internal Server Error", "detail": "An unexpected error occurred"}
+            content={"error": "Internal Server Error", "detail": "An unexpected error occurred"},
         )
 
     def _add_health_check(self, app: FastAPI) -> None:
@@ -172,21 +171,28 @@ class AppFactory:
 
         @app.get("/app")
         async def serve_react_app():
-            base_dir = getattr(self.settings, "FRONTEND_BUILD_DIR", os.path.join(os.path.dirname(__file__), "..", "frontend", "build"))
+            base_dir = getattr(
+                self.settings,
+                "FRONTEND_BUILD_DIR",
+                os.path.join(os.path.dirname(__file__), "..", "frontend", "build"),
+            )
             index_path = os.path.join(base_dir, "index.html")
             if os.path.exists(index_path):
                 return FileResponse(index_path, media_type="text/html")
             raise HTTPException(status_code=404, detail="React app not found")
 
         @app.get("/app/{full_path:path}")
-            base_dir = os.path.abspath("../frontend/build")
+        async def serve_assets(full_path: str):
+            base_dir = getattr(
+                self.settings,
+                "FRONTEND_BUILD_DIR",
+                os.path.join(os.path.dirname(__file__), "..", "frontend", "build"),
+            )
             requested_path = os.path.abspath(os.path.join(base_dir, full_path))
             if not requested_path.startswith(base_dir):
                 raise HTTPException(status_code=403, detail="Forbidden")
             if os.path.exists(requested_path):
                 return FileResponse(requested_path)
-            raise HTTPException(status_code=404, detail="Asset not found")
-                return FileResponse(file_path)
             raise HTTPException(status_code=404, detail="Asset not found")
 
 

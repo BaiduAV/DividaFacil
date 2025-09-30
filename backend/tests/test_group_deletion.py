@@ -27,21 +27,21 @@ def test_group_deletion(test_users):
     print("\n3. Testing deletion of settled group...")
     is_settled = DatabaseService.is_group_settled(group.id)
     print(f"   Group settled status: {is_settled}")
-    
+
     if is_settled:
         print("   Attempting to delete settled group...")
         success = DatabaseService.delete_group(group.id)
         print(f"   Deletion result: {'SUCCESS' if success else 'FAILED'}")
-        
+
         # Verify deletion
         deleted_group = DatabaseService.get_group(group.id)
         print(f"   Group still exists: {deleted_group is not None}")
-    
+
     # Create another group for unsettled test
     print("\n4. Creating group for unsettled test...")
     group2 = DatabaseService.create_group("Unsettled Test Group", [user1.id, user2.id])
     print(f"   Group '{group2.name}' created with ID: {group2.id}")
-    
+
     # Add an expense to make it unsettled
     print("\n5. Adding expense to create unsettled balances...")
     expense = Expense(
@@ -51,22 +51,22 @@ def test_group_deletion(test_users):
         paid_by=user1.id,
         split_type="EQUAL",
         split_among=[user1.id, user2.id],
-        split_values={}
+        split_values={},
     )
     group2.add_expense(expense)
     DatabaseService.add_expense_to_group(group2.id, expense)
-    
+
     # Calculate balances
     ExpenseService.calculate_balances(expense, group2.members)
     DatabaseService.update_user_balances(group2.members)
-    
+
     print("   Expense added and balances calculated")
-    
+
     # Check if group is settled now
     print("\n6. Testing deletion of unsettled group...")
     is_settled_2 = DatabaseService.is_group_settled(group2.id)
     print(f"   Group settled status: {is_settled_2}")
-    
+
     if not is_settled_2:
         print("   Group has outstanding balances - deletion should be blocked")
         print("   User balances:")
@@ -75,7 +75,7 @@ def test_group_deletion(test_users):
             for member_id, member in updated_group.members.items():
                 if member.balance:
                     print(f"     {member.name}: {dict(member.balance)}")
-    
+
     # Test settled calculation
     print("\n7. Testing balance calculation details...")
     if updated_group:
@@ -83,5 +83,5 @@ def test_group_deletion(test_users):
         print(f"   Net balances: {balances}")
         print(f"   Significant balances count: {len(balances)}")
         print(f"   Is settled (should be False): {len(balances) == 0}")
-    
+
     print("\n=== Test completed ===")

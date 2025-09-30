@@ -6,17 +6,14 @@ import json
 
 BASE_URL = "http://127.0.0.1:8000/api"
 
+
 def test_api_group_creation():
     """Test the complete API flow for group creation with emails."""
-    
+
     # First, create a test user account to get auth
     print("Creating test user account...")
-    signup_data = {
-        "name": "Test User",
-        "email": "testuser@example.com",
-        "password": "testpass123"
-    }
-    
+    signup_data = {"name": "Test User", "email": "testuser@example.com", "password": "testpass123"}
+
     try:
         signup_response = requests.post(f"{BASE_URL}/signup", json=signup_data)
         print(f"Signup response: {signup_response.status_code}")
@@ -28,14 +25,11 @@ def test_api_group_creation():
             print(f"Signup failed: {signup_response.text}")
     except Exception as e:
         print(f"Signup error: {e}")
-        
+
     # Login to get session
     print(f"\nLogging in...")
-    login_data = {
-        "email": "testuser@example.com", 
-        "password": "testpass123"
-    }
-    
+    login_data = {"email": "testuser@example.com", "password": "testpass123"}
+
     try:
         # Create a session to maintain cookies
         session = requests.Session()
@@ -46,19 +40,19 @@ def test_api_group_creation():
         else:
             print(f"Login failed: {login_response.text}")
             return
-            
+
     except Exception as e:
         print(f"Login error: {e}")
         return
-    
+
     # Test group creation with emails
     print(f"\nCreating group with email addresses...")
     group_data = {
         "name": "Test Group with Emails",
         "member_ids": [],  # Using existing user IDs if we had them
-        "member_emails": ["alice@test.com", "bob@test.com", "nonexistent@test.com"]
+        "member_emails": ["alice@test.com", "bob@test.com", "nonexistent@test.com"],
     }
-    
+
     try:
         create_response = session.post(f"{BASE_URL}/groups", json=group_data)
         print(f"Group creation response: {create_response.status_code}")
@@ -67,14 +61,14 @@ def test_api_group_creation():
             print("Group created successfully!")
             print(f"Group name: {group['name']}")
             print(f"Group members: {len(group['members'])}")
-            for member_id, member in group['members'].items():
+            for member_id, member in group["members"].items():
                 print(f"- {member['name']} ({member['email']})")
         else:
             print(f"Group creation failed: {create_response.text}")
-            
+
     except Exception as e:
         print(f"Group creation error: {e}")
-    
+
     # List groups to verify
     print(f"\nListing groups...")
     try:
@@ -87,7 +81,7 @@ def test_api_group_creation():
                 print(f"- {group['name']} ({len(group['members'])} members)")
         else:
             print(f"Failed to list groups: {groups_response.text}")
-            
+
     except Exception as e:
         print(f"List groups error: {e}")
 

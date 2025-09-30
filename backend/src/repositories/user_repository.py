@@ -93,10 +93,13 @@ class UserRepository:
 
     def get_by_reset_token(self, reset_token: str) -> Optional[User]:
         """Get user by reset token if token is valid."""
-        db_user = self.db.query(UserDB).filter(
-            UserDB.reset_token == reset_token,
-            UserDB.reset_token_expiry > datetime.utcnow()
-        ).first()
+        db_user = (
+            self.db.query(UserDB)
+            .filter(
+                UserDB.reset_token == reset_token, UserDB.reset_token_expiry > datetime.utcnow()
+            )
+            .first()
+        )
         return self._to_domain_model(db_user) if db_user else None
 
     def update_password(self, user_id: str, password_hash: str) -> bool:

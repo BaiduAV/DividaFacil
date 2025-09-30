@@ -15,6 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
+
 # Database URL - default to SQLite local file, overridable via env
 def normalize_database_url(url: str) -> str:
     """Normalize database URL for SQLAlchemy compatibility."""
@@ -24,6 +25,7 @@ def normalize_database_url(url: str) -> str:
         # Ensure psycopg2 driver explicit for reliability
         return url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
+
 
 DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./dividafacil.db"))
 

@@ -37,7 +37,7 @@ def test_group_creation_with_emails(test_users):
         user = DatabaseService.get_user_by_email(email)
         if user:
             member_ids_from_emails.append(user.id)
-    
+
     group2 = DatabaseService.create_group("Test Group 2", member_ids_from_emails)
     print(f"Group '{group2.name}' created with {len(group2.members)} members:")
     for member_id, member in group2.members.items():

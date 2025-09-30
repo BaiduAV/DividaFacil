@@ -48,7 +48,7 @@ async def api_signup(request: Request, signup_data: SignupRequest):
     # Validate password strength
     if len(signup_data.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
-    
+
     # Register user
     user = AuthService.register_user(signup_data.name, signup_data.email, signup_data.password)
     if not user:
@@ -71,7 +71,7 @@ async def api_logout(request: Request):
 async def forgot_password(forgot_data: ForgotPasswordRequest):
     """Request password reset token."""
     reset_token = AuthService.generate_reset_token(forgot_data.email)
-    
+
     if reset_token:
         # In a real application, you would send this token via email
         # For now, we'll return it in the response (for development only)
@@ -82,14 +82,14 @@ async def forgot_password(forgot_data: ForgotPasswordRequest):
         return {"message": "If the email exists, a reset link has been sent"}
 
 
-@router.post("/reset-password") 
+@router.post("/reset-password")
 async def reset_password(reset_data: ResetPasswordRequest):
     """Reset password using reset token."""
     if len(reset_data.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
-    
+
     success = AuthService.reset_password(reset_data.token, reset_data.password)
-    
+
     if success:
         return {"message": "Password reset successful"}
     else:
