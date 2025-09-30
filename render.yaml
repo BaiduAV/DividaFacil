@@ -10,10 +10,17 @@ services:
     plan: free
     region: oregon
     rootDir: backend
-  buildCommand: pip install -r requirements.txt && alembic upgrade head
-  # Gunicorn with Uvicorn workers for production robustness
-  # Adjust WORKERS via env var if needed (default 3 here). On free tier keep modest.
-  startCommand: gunicorn web_app:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers ${WORKERS:-3} --timeout 60
+    # Build frontend (Node+Vite) then backend deps & migrations. Node & Python toolchains are available in Render's standard environment.
+    buildCommand: |
+      cd ../frontend \
+      && npm ci \
+      && npm run build \
+      && cd ../backend \
+      && pip install -r requirements.txt \
+      && alembic upgrade head
+    # Gunicorn with Uvicorn workers for production robustness
+    # Adjust WORKERS via env var if needed (default 3 here). On free tier keep modest.
+    startCommand: gunicorn web_app:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers ${WORKERS:-3} --timeout 60
     healthCheckPath: /healthz
     envVars:
       - key: APP_NAME
