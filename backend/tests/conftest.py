@@ -3,6 +3,9 @@
 
 import pytest
 import uuid
+from fastapi.testclient import TestClient
+
+from web_app import app  # FastAPI application instance
 from src.services.database_service import DatabaseService
 
 
@@ -28,6 +31,12 @@ def cleanup_test_data():
 def unique_email():
     """Generate a unique email for testing."""
     return f"test_{uuid.uuid4().hex[:8]}@example.com"
+
+
+@pytest.fixture(scope="session")
+def client():
+    """Provide a FastAPI TestClient for API tests without needing a running server."""
+    return TestClient(app)
 
 
 @pytest.fixture

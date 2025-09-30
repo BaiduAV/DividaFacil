@@ -1,74 +1,46 @@
 #!/usr/bin/env python3
-"""Add test user to Category Test Group and verify expenses display."""
+"""Category display test converted to assertions with TestClient.
 
-import requests
-import json
+NOTE: Original test depended on pre-existing group and user IDs; we adapt by creating
+our own group and expenses instead of relying on hard-coded UUIDs.
+"""
 
-
-def test_category_display():
-    """Test the complete category functionality flow."""
-
-    base_url = "http://localhost:8000"
-
-    # Login
-    login_data = {"email": "tester@example.com", "password": "test123"}
-
-    session = requests.Session()
-
-    print("🔐 Logging in...")
-    response = session.post(f"{base_url}/api/login", json=login_data)
-    if response.status_code != 200:
-        print(f"❌ Login failed: {response.status_code} - {response.text}")
-        return
-
-    print("✅ Login successful!")
-
-    # Add user to Category Test Group
-    group_id = "8a1c300b-e64c-492e-b874-c4d5704832c4"  # Category Test Group ID
-    user_id = "6999e981-0ef0-464d-b831-c59699ea0239"  # Test user ID from previous test
-
-    print(f"\n👥 Adding user to group {group_id}...")
-    response = session.post(f"{base_url}/api/groups/{group_id}/members/{user_id}")
-    if response.status_code == 204:
-        print("✅ Successfully added to group!")
-    elif response.status_code == 409:
-        print("ℹ️  User already in group")
-    else:
-        print(f"⚠️  Add to group result: {response.status_code} - {response.text}")
-
-    # Now get groups to verify
-    print("\n📁 Getting groups...")
-    response = session.get(f"{base_url}/api/groups")
-    if response.status_code == 200:
-        groups = response.json()
-        print(f"✅ Found {len(groups)} groups")
-
-        for group in groups:
-            if group.get("name") == "Category Test Group":
-                print(f"\n🎯 Found Category Test Group!")
-                print(f"   Group ID: {group.get('id')}")
-                print(f"   Members: {len(group.get('members', {}))}")
-
-                expenses = group.get("expenses", [])
-                print(f"   💰 Expenses: {len(expenses)}")
-
-                # Check category distribution
-                category_counts = {}
-                for expense in expenses:
-                    category = expense.get("category") or "None/General"
-                    category_counts[category] = category_counts.get(category, 0) + 1
-                    print(
-                        f"      - {expense.get('description')}: ${expense.get('amount'):.2f} (Category: {category})"
-                    )
-
-                print(f"\n📊 Category Summary:")
-                for category, count in category_counts.items():
-                    print(f"      {category}: {count} expense(s)")
-
-                break
-    else:
-        print(f"❌ Groups request failed: {response.status_code} - {response.text}")
+import pytest
 
 
-if __name__ == "__main__":
-    test_category_display()
+@pytest.mark.usefixtures("client")
+def test_category_display(client):
+    # Sign up & login a user
+    signup_payload = {"name": "Category Tester", "email": "cat@test.com", "password": "test123"}
+    client.post("/api/signup", json=signup_payload)  # ignore duplicate / error semantics
+    login_resp = client.post(
+        "/api/login", json={"email": signup_payload["email"], "password": signup_payload["password"]}
+    )
+    assert login_resp.status_code == 200
+
+    # Create group
+    group_resp = client.post(
+        "/api/groups", json={"name": "Category Test Group", "member_ids": [], "member_emails": []}
+    )
+    assert group_resp.status_code == 201
+    group = group_resp.json()
+    group_id = group["id"]
+    member_ids = list(group["members"].keys())
+    assert member_ids
+
+    # Add several expenses with and without categories (if category field supported in schema)
+    expenses_payloads = [
+        {"description": "Lunch", "amount": 30.0, "paid_by": member_ids[0], "split_type": "EQUAL", "split_among": member_ids},
+        {"description": "Taxi", "amount": 50.0, "paid_by": member_ids[0], "split_type": "EQUAL", "split_among": member_ids},
+    ]
+    for payload in expenses_payloads:
+        resp = client.post(f"/api/groups/{group_id}/expenses", json=payload)
+        assert resp.status_code == 201
+
+    # Retrieve groups and find our test group
+    groups_resp = client.get("/api/groups")
+    assert groups_resp.status_code == 200
+    groups = groups_resp.json()
+    target = next((g for g in groups if g["name"] == "Category Test Group"), None)
+    assert target, "Created group should be returned in list"
+    assert len(target.get("expenses", [])) == len(expenses_payloads)

@@ -1,52 +1,37 @@
 #!/usr/bin/env python3
+"""Authentication API flow tests using in-process TestClient."""
 
-import requests
-import json
-
-BASE_URL = "http://127.0.0.1:8000"
+import pytest
 
 
-def test_auth_flow():
-    # Create a session to maintain cookies
-    session = requests.Session()
-
-    # 1. Test signup
-    print("1. Testing signup...")
-    signup_data = {
+@pytest.mark.usefixtures("client")
+def test_auth_flow(client):
+    # 1. Signup
+    signup_payload = {
         "name": "Test User 2",
         "email": "test2@example.com",
         "password": "testpassword123",
     }
+    signup_resp = client.post("/api/signup", json=signup_payload)
+    # Either 201 (created) or 400 if already exists from prior run
+    assert signup_resp.status_code in (201, 400)
+    if signup_resp.status_code == 400:
+        # Ensure correct error semantics
+        body = signup_resp.json()
+        assert "detail" in body
 
-    response = session.post(f"{BASE_URL}/api/signup", json=signup_data)
-    print(f"Signup status: {response.status_code}")
-    if response.status_code != 201:
-        print(f"Signup error: {response.text}")
-    else:
-        print("Signup successful!")
+    # 2. Login
+    login_resp = client.post(
+        "/api/login", json={"email": signup_payload["email"], "password": signup_payload["password"]}
+    )
+    assert login_resp.status_code == 200
+    data = login_resp.json()
+    assert data["message"].lower().startswith("login")
+    assert "user_id" in data
 
-    # 2. Test login
-    print("\n2. Testing login...")
-    login_data = {"email": "test2@example.com", "password": "testpassword123"}
-
-    response = session.post(f"{BASE_URL}/api/login", json=login_data)
-    print(f"Login status: {response.status_code}")
-    if response.status_code != 200:
-        print(f"Login error: {response.text}")
-    else:
-        print("Login successful!")
-        print(f"Response: {response.json()}")
-
-    # 3. Test /users endpoint (current user)
-    print("\n3. Testing /users endpoint...")
-    response = session.get(f"{BASE_URL}/api/users")
-    print(f"Users status: {response.status_code}")
-    if response.status_code != 200:
-        print(f"Users error: {response.text}")
-    else:
-        print("Users successful!")
-        print(f"Response: {response.json()}")
-
-
-if __name__ == "__main__":
-    test_auth_flow()
+    # 3. Current user via /users (returns list with one user)
+    users_resp = client.get("/api/users")
+    assert users_resp.status_code == 200
+    users = users_resp.json()
+    assert isinstance(users, list) and len(users) == 1
+    assert users[0]["email"] == signup_payload["email"]

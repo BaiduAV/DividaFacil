@@ -6,6 +6,7 @@ from src.database import create_tables, get_db
 from src.models.group import Group
 from src.models.user import User
 from src.repositories.expense_repository import ExpenseRepository
+from src.services.split_calculator import calculate_portions
 from src.repositories.group_repository import GroupRepository
 from src.repositories.user_repository import UserRepository
 
@@ -139,21 +140,8 @@ class DatabaseService:
         group_balances = {user_id: {} for user_id in group.members.keys()}
 
         for expense in group.expenses:
-            portions = {}
-
-            if expense.split_type == "EQUAL":
-                split_amount = round(expense.amount / len(expense.split_among), 2)
-                portions = {
-                    uid: split_amount for uid in expense.split_among if uid in group.members
-                }
-            elif expense.split_type == "EXACT":
-                portions = {
-                    uid: amt for uid, amt in expense.split_values.items() if uid in group.members
-                }
-            elif expense.split_type == "PERCENTAGE":
-                for uid, pct in expense.split_values.items():
-                    if uid in group.members:
-                        portions[uid] = round((expense.amount * pct) / 100.0, 2)
+            raw_portions = calculate_portions(expense)
+            portions = {uid: amt for uid, amt in raw_portions.items() if uid in group.members}
 
             # Apply portions to balances
             for uid, owed_amount in portions.items():

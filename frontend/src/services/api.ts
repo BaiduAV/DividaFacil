@@ -1,5 +1,7 @@
 // API client for communicating with the FastAPI backend
-const API_BASE_URL = 'http://localhost:8000/api';
+// Base URL can be overridden via Vite env var: VITE_API_BASE_URL
+// Fallback to same-origin '/api' so that reverse proxies work in production.
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -170,7 +172,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  balance: number;
+  // Balance is a mapping of other_user_id -> net amount (positive means this user owes that user, negative means is owed)
+  balance: Record<string, number>;
 }
 
 export interface Group {
