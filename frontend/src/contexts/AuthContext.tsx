@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api, { User } from '../services/api';
+import api, { User, SessionResponse } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -30,12 +30,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const users = await api.getCurrentUser();
-      if (users && users.length > 0) {
-        setUser(users[0]);
-      } else {
-        setUser(null);
-      }
+      const session: SessionResponse = await api.getSession();
+      if (session.authenticated && session.user) {
+        setUser(session.user);
+      } else setUser(null);
     } catch (error) {
       setUser(null);
     } finally {

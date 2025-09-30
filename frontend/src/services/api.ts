@@ -38,7 +38,10 @@ class ApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        console.error(`API Error ${response.status}:`, errorData);
+        if (response.status === 401) {
+          // Dispatch a global event so auth context (or other listeners) can react if desired
+          window.dispatchEvent(new CustomEvent('api:unauthorized'));
+        }
         throw new ApiError(response.status, errorData.detail || 'Request failed');
       }
 
@@ -102,8 +105,21 @@ class ApiClient {
     });
   }
 
+  /**
+   * Get current session status. Returns authenticated flag and optional user.
+   * Prefer this over getCurrentUser() which required auth and returned an array.
+   */
+  async getSession(): Promise<SessionResponse> {
+    return this.request('/session');
+  }
+
+  // Backwards compatibility (deprecated): returns an array for legacy code paths.
   async getCurrentUser(): Promise<User[]> {
-    return this.request('/users');
+    const session = await this.getSession();
+    if (session.authenticated && session.user) {
+      return [{ ...session.user, balance: session.user.balance || {} } as User];
+    }
+    return [];
   }
 
   // Group endpoints
@@ -174,6 +190,11 @@ export interface User {
   email: string;
   // Balance is a mapping of other_user_id -> net amount (positive means this user owes that user, negative means is owed)
   balance: Record<string, number>;
+}
+
+export interface SessionResponse {
+  authenticated: boolean;
+  user?: User;
 }
 
 export interface Group {

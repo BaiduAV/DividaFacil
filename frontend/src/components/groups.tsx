@@ -79,12 +79,14 @@ export function Groups({ openCreateModal = false, onCreateModalClose, onNavigate
 
   const loadUsers = async () => {
     try {
-      // Get the current user - for now, this is the only user available due to privacy constraints
-      const users = await apiClient.getCurrentUser();
-      setAvailableUsers(users);
+      const session = await apiClient.getSession();
+      if (session.authenticated && session.user) {
+        setAvailableUsers([{ ...session.user, balance: session.user.balance || {} }]);
+      } else {
+        setAvailableUsers([]);
+      }
     } catch (error) {
       console.error("Failed to load users:", error);
-      // Fallback to empty array
       setAvailableUsers([]);
     }
   };
