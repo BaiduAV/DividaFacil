@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.auth import require_authentication
 from src.models.user import User
 from src.schemas.group import GroupCreate, GroupResponse
 from src.services.database_service import DatabaseService
+from src.audit import audit
 from src.services.expense_service import ExpenseService
 
 router = APIRouter(tags=["groups"])
@@ -11,7 +12,7 @@ router = APIRouter(tags=["groups"])
 
 @router.post("/groups", response_model=GroupResponse, status_code=201)
 async def create_group_api(
-    group_data: GroupCreate, current_user: User = Depends(require_authentication)
+    group_data: GroupCreate, request: Request, current_user: User = Depends(require_authentication)
 ):
     """Create a new group via JSON API. Current user automatically becomes a member."""
     # Collect member IDs from both direct IDs and emails
@@ -25,6 +26,12 @@ async def create_group_api(
 
     # Create group with all resolved member IDs
     created = DatabaseService.create_group(group_data.name, list(member_ids))
+    audit(
+        "group.created",
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else None,
+        details={"group_id": created.id, "name": created.name, "members": list(created.members.keys())},
+    )
     return GroupResponse.from_group(created)
 
 
@@ -89,7 +96,7 @@ async def add_member_api(
 
 
 @router.delete("/groups/{group_id}", status_code=204)
-async def delete_group_api(group_id: str, current_user: User = Depends(require_authentication)):
+async def delete_group_api(group_id: str, request: Request, current_user: User = Depends(require_authentication)):
     """Delete a group via JSON API. Only allowed if group is settled and user is a member."""
     group = DatabaseService.get_group(group_id)
     if not group:
@@ -111,5 +118,10 @@ async def delete_group_api(group_id: str, current_user: User = Depends(require_a
     # Delete the group
     if not DatabaseService.delete_group(group_id):
         raise HTTPException(status_code=500, detail="Failed to delete group")
-
+    audit(
+        "group.deleted",
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else None,
+        details={"group_id": group_id},
+    )
     return None

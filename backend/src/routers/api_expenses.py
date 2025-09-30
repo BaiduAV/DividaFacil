@@ -9,6 +9,7 @@ from src.models.user import User
 from src.schemas.expense import ExpenseCreate, ExpenseResponse
 from src.services.database_service import DatabaseService
 from src.services.expense_service import ExpenseService
+from src.audit import audit
 
 router = APIRouter(tags=["expenses"])
 
@@ -94,9 +95,21 @@ async def create_expense_api(
 
     # Recompute balances and save to database
     group = DatabaseService.get_group(group_id)  # Refresh from DB
+    assert group is not None  # for type checking safety
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
 
+    audit(
+        "expense.created",
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else None,
+        details={
+            "group_id": group_id,
+            "expense_id": expense.id,
+            "amount": expense.amount,
+            "split_type": expense.split_type,
+        },
+    )
     return ExpenseResponse.from_expense(expense)
 
 
@@ -125,6 +138,7 @@ async def list_expenses_api(
             status_code=403, detail="Access denied. You are not a member of this group."
         )
 
+    assert group is not None
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
 
@@ -147,6 +161,7 @@ async def pay_installment_api(
 
     # Recompute balances and save to database
     group = DatabaseService.get_group(group_id)
+    assert group is not None
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
     return {}
@@ -183,6 +198,13 @@ async def delete_expense_api(
 
     # Recompute balances and save to database
     group = DatabaseService.get_group(group_id)
+    assert group is not None
     ExpenseService.recompute_group_balances(group)
     DatabaseService.update_user_balances(group.members)
+    audit(
+        "expense.deleted",
+        actor_id=current_user.id,
+        actor_ip=request.client.host if request.client else None,
+        details={"group_id": group_id, "expense_id": expense_id},
+    )
     return {}
