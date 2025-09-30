@@ -44,6 +44,11 @@ def test_delete_group_api(client):
     missing_delete = client.delete("/api/groups/fake-group-id", headers={"X-CSRF-Token": csrf_token})
     assert missing_delete.status_code == 404
 
+    # Ensure additional members exist so expense creates real outstanding balances
+    # Sign up two extra users if not already existing
+    for extra_email in ["alice@test.com", "bob@test.com"]:
+        client.post("/api/signup", json={"name": extra_email.split("@")[0].title(), "email": extra_email, "password": "pass1234"})
+
     # Create group with members (by email) and add expense to make it unsettled
     group2_resp = client.post(
         "/api/groups",

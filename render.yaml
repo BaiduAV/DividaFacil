@@ -1,5 +1,6 @@
-# Render Infrastructure as Code
+# Render Infrastructure as Code (root-level)
 # Docs: https://render.com/docs/infrastructure-as-code
+# This file supersedes backend/render.yaml (which had indentation issues and was not at repo root).
 
 services:
   - type: web
@@ -8,24 +9,28 @@ services:
     autoDeploy: true
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
     startCommand: uvicorn web_app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
-
     envVars:
       - key: APP_NAME
         value: DividaFacil
       - key: LOG_LEVEL
         value: INFO
-      # Use the internal connection string to connect within Render's network
+      - key: LOG_FORMAT
+        value: text  # change to 'json' in production for structured logs
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_SECRET_KEY
+        generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: dividafacil-db
           property: connectionString
 
 # Managed PostgreSQL database
-# On first deploy, Render will provision this database and inject credentials
-# into the service via env var mapping above.
+# On first deploy, Render will provision this database and inject credentials.
 databases:
   - name: dividafacil-db
     plan: free

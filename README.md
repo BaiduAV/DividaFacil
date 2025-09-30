@@ -560,6 +560,49 @@ SESSION_SECRET_KEY=<valor forte>
 ### Teste de Audit Log
 `tests/test_audit.py` valida que criação de grupo e despesa geram entradas estruturadas.
 
+## Deploy no Render
+
+Infra como código em `backend/render.yaml` usando `rootDir: backend`.
+
+Passos:
+1. Conectar repositório no Render.
+2. Garantir que o serviço web usa IaC (Enable Infrastructure as Code) e referencie `render.yaml`.
+3. Variáveis automáticas:
+   - `DATABASE_URL` (provisionada pelo bloco `databases`)
+   - `SESSION_SECRET_KEY` (gerada automaticamente via `generateValue: true`)
+4. Comandos:
+   - Build: `pip install -r requirements.txt` (executado dentro de `backend/` via rootDir)
+   - Start: `uvicorn web_app:app --host 0.0.0.0 --port $PORT`
+5. Health check: `/healthz`.
+
+### Migrações Alembic
+`render.yaml` agora roda `alembic upgrade head` no build. Certifique-se de manter migrations atualizadas em `backend/alembic/versions/`.
+
+Para criar nova migration local:
+```
+cd backend
+alembic revision --autogenerate -m "descricao"
+alembic upgrade head
+```
+
+### Logging Estruturado
+Defina `LOG_FORMAT=json` para logs JSON line-friendly (campo: level, logger, msg, ts). Padrão: texto.
+
+Variáveis extras recomendadas:
+```
+LOG_LEVEL=INFO
+SESSION_COOKIE_SECURE=true
+APP_NAME=DividaFacil
+LOG_FORMAT=text
+```
+
+Migração Banco (SQLite -> Postgres): automática ao iniciar pois `create_tables()` roda; para Alembic futuro, adicionar comando de migração no build.
+
+### Erros comuns Render
+- Falha em encontrar `requirements.txt`: resolvido com `rootDir`.
+- Erro de import `web_app`: garantir rootDir ajustado ou prefixar módulo.
+- Porta incorreta: sempre usar `$PORT` fornecida pelo Render.
+
 
 ### CSRF
 - `GET /api/csrf-token` – retorna token para headers de escrita.
