@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Spinner } from '../components/ui/spinner';
 import api, { User, SessionResponse } from '../services/api';
 
 interface AuthContextType {
@@ -25,7 +26,17 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem('session_user');
+        if (raw) return JSON.parse(raw) as User;
+      } catch {
+        // ignore parse errors
+      }
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuth = async () => {
@@ -101,8 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Simple lightweight skeleton while loading auth state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen text-sm text-gray-500 animate-pulse">
-        Loading session...
+      <div className="flex items-center justify-center h-screen">
+        <Spinner label="Loading session" />
       </div>
     );
   }

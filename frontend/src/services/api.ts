@@ -2,6 +2,19 @@
 // Base URL can be overridden via Vite env var: VITE_API_BASE_URL
 // Fallback to same-origin '/api' so that reverse proxies work in production.
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+const CSRF_HEADER = 'X-CSRF-Token';
+const CSRF_STORAGE_KEY = 'csrf_token';
+const USER_STORAGE_KEY = 'session_user';
+
+// Throttle unauthorized dispatch to at most one every 2 seconds
+let lastUnauthorizedDispatch = 0;
+function dispatchUnauthorizedThrottled() {
+  const now = Date.now();
+  if (now - lastUnauthorizedDispatch > 2000) {
+    window.dispatchEvent(new CustomEvent('api:unauthorized'));
+    lastUnauthorizedDispatch = now;
+  }
+}
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -23,10 +36,16 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    // Attach CSRF token for state-changing methods if present
+    const method = (options.method || 'GET').toUpperCase();
+    const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+    const csrfToken = (isMutating && typeof window !== 'undefined') ? sessionStorage.getItem(CSRF_STORAGE_KEY) : null;
+
     const config: RequestInit = {
       credentials: 'include', // Include cookies for session management
       headers: {
         'Content-Type': 'application/json',
+        ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
         ...options.headers,
       },
       ...options,
@@ -39,8 +58,7 @@ class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
         if (response.status === 401) {
-          // Dispatch a global event so auth context (or other listeners) can react if desired
-          window.dispatchEvent(new CustomEvent('api:unauthorized'));
+          dispatchUnauthorizedThrottled();
         }
         throw new ApiError(response.status, errorData.detail || 'Request failed');
       }
@@ -64,17 +82,21 @@ class ApiClient {
 
   // Authentication endpoints
   async login(email: string, password: string): Promise<{ message: string; user_id: string; user_name: string }> {
-    return this.request('/login', {
+  const res = await this.request<{ message: string; user_id: string; user_name: string }>('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    await this.refreshCsrfToken();
+    return res;
   }
 
   async signup(userData: { name: string; email: string; password: string }): Promise<{ message: string; user_id: string; user_name: string }> {
-    return this.request('/signup', {
+  const res = await this.request<{ message: string; user_id: string; user_name: string }>('/signup', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
+    await this.refreshCsrfToken();
+    return res;
   }
 
   async forgotPassword(email: string): Promise<{ message: string; token?: string }> {
@@ -92,9 +114,14 @@ class ApiClient {
   }
 
   async logout(): Promise<{ message: string }> {
-    return this.request('/logout', {
+  const res = await this.request<{ message: string }>('/logout', {
       method: 'POST',
     });
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(CSRF_STORAGE_KEY);
+      sessionStorage.removeItem(USER_STORAGE_KEY);
+    }
+    return res;
   }
 
   // User endpoints
@@ -110,7 +137,15 @@ class ApiClient {
    * Prefer this over getCurrentUser() which required auth and returned an array.
    */
   async getSession(): Promise<SessionResponse> {
-    return this.request('/session');
+    const session = await this.request<SessionResponse>('/session');
+    if (typeof window !== 'undefined') {
+      if (session.authenticated && session.user) {
+        sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
+      } else {
+        sessionStorage.removeItem(USER_STORAGE_KEY);
+      }
+    }
+    return session;
   }
 
   // Backwards compatibility (deprecated): returns an array for legacy code paths.
@@ -120,6 +155,18 @@ class ApiClient {
       return [{ ...session.user, balance: session.user.balance || {} } as User];
     }
     return [];
+  }
+
+  private async refreshCsrfToken(): Promise<void> {
+    try {
+      const data = await this.request<{ csrf_token: string; header: string }>('/csrf-token');
+      if (data?.csrf_token && typeof window !== 'undefined') {
+        sessionStorage.setItem(CSRF_STORAGE_KEY, data.csrf_token);
+      }
+    } catch (e) {
+      // Non-fatal; log quietly.
+      console.warn('Failed to refresh CSRF token', e);
+    }
   }
 
   // Group endpoints

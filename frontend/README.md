@@ -32,3 +32,22 @@
   - Clarifies intent: a lightweight status check instead of a user list endpoint that exposed only the current user.
   - Simplifies future extension (e.g., session expiry, roles) without changing consumer code.
   
+  ## Additional Auth Enhancements
+
+  ### CSRF Token Bootstrap
+  After successful login or signup the client calls `GET /api/csrf-token` and stores the returned token in `sessionStorage` under `csrf_token`. Mutating requests (POST/PUT/PATCH/DELETE) automatically attach it as the `X-CSRF-Token` header.
+
+  ### Session Persistence
+  The latest authenticated user object is cached in `sessionStorage` (`session_user`) to provide instant UI hydration before the network round trip finishes. If the network check later invalidates the session, the cache is cleared.
+
+  ### Throttled Unauthorized Events
+  401 responses dispatch a global `api:unauthorized` event at most once every 2 seconds to prevent event storms if multiple concurrent requests fail.
+
+  ### Loading UX
+  A dedicated `<Spinner />` component provides a consistent loading state while the initial session check runs.
+
+  ## Extending Further
+  - Add role/permissions to the session payload.
+  - Persist dark/light theme or feature flags alongside `session_user`.
+  - Handle silent session renewal (if/when refresh endpoints are added).
+  
