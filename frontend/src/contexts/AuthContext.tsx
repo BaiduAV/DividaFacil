@@ -76,6 +76,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
+
+    // Listen for global unauthorized events to clear session state and optionally trigger re-auth UI
+    const handleUnauthorized = () => {
+      setUser(null);
+      // Avoid forcing isLoading=false if we're in the middle of a refresh cycle
+      if (!isLoading) {
+        setIsLoading(false);
+      }
+    };
+    window.addEventListener('api:unauthorized', handleUnauthorized as EventListener);
+    return () => window.removeEventListener('api:unauthorized', handleUnauthorized as EventListener);
   }, []);
 
   const value: AuthContextType = {
@@ -87,9 +98,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Simple lightweight skeleton while loading auth state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-sm text-gray-500 animate-pulse">
+        Loading session...
+      </div>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
