@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr
 from src.auth import login_user, logout_user
 from src.services.auth_service import AuthService
 from src.services.database_service import DatabaseService
+from src.auth import get_current_user_from_session
 
 router = APIRouter(tags=["auth"])
 
@@ -65,6 +66,19 @@ async def api_logout(request: Request):
     """API logout endpoint."""
     logout_user(request)
     return {"message": "Logout successful"}
+
+
+@router.get("/session")
+async def api_session(request: Request):
+    """Return current session status.
+
+    Allows frontend to determine if the user is authenticated without causing a 401 that
+    would occur when calling protected endpoints (like GET /api/users) prior to login.
+    """
+    user = get_current_user_from_session(request)
+    if not user:
+        return {"authenticated": False}
+    return {"authenticated": True, "user": {"id": user.id, "name": user.name, "email": user.email}}
 
 
 @router.post("/forgot-password")
