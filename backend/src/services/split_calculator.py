@@ -55,11 +55,19 @@ def calculate_portions(expense: Expense) -> Dict[str, float]:
     if expense.split_type == SPLIT_PERCENTAGE:
         if not expense.split_values:
             raise ValueError(ERROR_NO_SPLIT_VALUES)
-        result: Dict[str, float] = {}
+        portions: Dict[str, Decimal] = {}
         for uid, pct in expense.split_values.items():
             portion = (amount * Decimal(str(pct))) / PERCENTAGE_BASE
-            result[uid] = float(_round(portion))
-        return result
+            portions[uid] = _round(portion)
+
+        diff = amount - sum(portions.values())
+        if abs(diff) > Decimal("0"):
+            # Deterministically assign remainder to last non-payer user
+            user_ids = list(portions.keys())
+            candidates = [uid for uid in user_ids if uid != expense.paid_by] or user_ids
+            last = candidates[-1]
+            portions[last] = _round(portions[last] + diff)
+        return {uid: float(v) for uid, v in portions.items()}
 
     raise ValueError(f"{ERROR_INVALID_SPLIT_TYPE}: {expense.split_type}")
 
