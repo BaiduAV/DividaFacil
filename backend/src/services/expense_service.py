@@ -218,6 +218,14 @@ class ExpenseService:
             user.balance.clear()
 
         for exp in group.expenses:
+            if exp.paid_by not in group.members:
+                logger.warning(
+                    "Skipping expense %s for missing payer %s in group %s",
+                    exp.id,
+                    exp.paid_by,
+                    group.id,
+                )
+                continue
             payer = group.members[exp.paid_by]
             portions: Dict[str, float] = calculate_portions(exp)
 

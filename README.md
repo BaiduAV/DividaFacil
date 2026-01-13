@@ -118,7 +118,7 @@ O backend serve o build (se existente) em `/app`.
 
 ---
 
-## � Scripts Unificados
+## 🛠 Scripts Unificados
 
 Windows (PowerShell):
 ```powershell
@@ -381,7 +381,7 @@ Acesse: http://localhost:8000
 ### Endpoints principais
 
 - **Aplicação React**: `http://localhost:8000/` (SPA principal)
-- **API Health Check**: `http://localhost:8000/api/healthz`
+- **API Health Check**: `http://localhost:8000/healthz`
 - **API Endpoints**: `http://localhost:8000/api/*`
 
 ## Desenvolvimento
