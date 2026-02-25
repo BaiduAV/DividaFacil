@@ -262,16 +262,7 @@ class ExpenseService:
 
         for exp in group.expenses:
             # Determine portions per user
-            portions: Dict[str, float] = {}
-            if exp.split_type == "EQUAL":
-                per_person = exp.amount / len(exp.split_among)
-                for uid in exp.split_among:
-                    portions[uid] = per_person
-            elif exp.split_type == "EXACT":
-                portions = dict(exp.split_values)
-            elif exp.split_type == "PERCENTAGE":
-                for uid, pct in exp.split_values.items():
-                    portions[uid] = (exp.amount * pct) / 100.0
+            portions: Dict[str, float] = calculate_portions(exp)
 
             if exp.installments_count > 1 and exp.installments:
                 total = exp.amount
