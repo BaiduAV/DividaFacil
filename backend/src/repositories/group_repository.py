@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session, selectinload
 
-from src.database import GroupDB, UserDB
+from src.database import ExpenseDB, GroupDB, UserDB
 from src.models.group import Group
 from src.models.user import User
 
@@ -31,7 +31,11 @@ class GroupRepository:
         """Get group by ID with all relationships loaded."""
         db_group = (
             self.db.query(GroupDB)
-            .options(selectinload(GroupDB.members), selectinload(GroupDB.expenses))
+            .options(
+                selectinload(GroupDB.members),
+                selectinload(GroupDB.expenses).selectinload(ExpenseDB.installments),
+                selectinload(GroupDB.expenses).selectinload(ExpenseDB.split_among_users),
+            )
             .filter(GroupDB.id == group_id)
             .first()
         )
@@ -41,7 +45,11 @@ class GroupRepository:
         """Get all groups with relationships loaded."""
         db_groups = (
             self.db.query(GroupDB)
-            .options(selectinload(GroupDB.members), selectinload(GroupDB.expenses))
+            .options(
+                selectinload(GroupDB.members),
+                selectinload(GroupDB.expenses).selectinload(ExpenseDB.installments),
+                selectinload(GroupDB.expenses).selectinload(ExpenseDB.split_among_users),
+            )
             .all()
         )
         return [self._to_domain_model(db_group) for db_group in db_groups]
